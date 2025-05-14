@@ -1,0 +1,64 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: traefik-repo
+  namespace: traefik
+spec:
+  interval: 1h
+  url: https://helm.traefik.io/traefik
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  interval: 1m0s
+  chart:
+    spec:
+      chart: traefik
+      version: 35.2.0
+      sourceRef:
+        kind: HelmRepository
+        name: traefik-repo
+  values:
+    deployment:
+      replicas: 2
+    service:
+      spec:
+        loadBalancerIP: 192.168.178.210
+    ports:
+      web:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+      websecure:
+        tls:
+          enabled: true
+        store:
+          name: default
+        domains:
+          - main: "*.luehr.dev"
+    ingressClass:  # @schema additionalProperties: false
+      enabled: true
+      isDefaultClass: true
+      name: "traefik-internal"
+    ingressRoute:
+      dashboard:
+        enabled: true
+    logs:
+      general:
+        level: INFO
+      access:
+        enabled: true

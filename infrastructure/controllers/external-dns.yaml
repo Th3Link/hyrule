@@ -1,0 +1,43 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: external-dns-repo
+  namespace: pihole-system
+spec:
+  interval: 1h
+  url: https://kubernetes-sigs.github.io/external-dns/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns-release
+  namespace: pihole-system
+spec:
+  chart:
+    spec:
+      chart: external-dns
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns-repo
+      version: 0.17.0
+  interval: 1m0s
+  values:
+    provider:
+      name: pihole
+    policy: upsert-only
+    txtOwnerId: "hyrule"
+    env:
+      - name: EXTERNAL_DNS_PIHOLE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: pihole-password
+            key: password
+      - name: EXTERNAL_DNS_PIHOLE_API_VERSION
+        value: 6
+      - name: EXTERNAL_DNS_PIHOLE_SERVER
+        value: http://pihole-release-web.pihole-system.svc.hyrule.luehr.dev
+    serviceAccount:
+      create: true
+      name: "external-dns"
