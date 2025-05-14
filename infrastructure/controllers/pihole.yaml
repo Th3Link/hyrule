@@ -1,0 +1,69 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pihole-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: pihole-repo
+  namespace: pihole-system
+spec:
+  interval: 1h
+  url: https://mojo2600.github.io/pihole-kubernetes/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pihole-release
+  namespace: pihole-system
+spec:
+  chart:
+    spec:
+      chart: pihole
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: HelmRepository
+        name: pihole-repo
+      version: 2.30.0
+  interval: 1m0s
+  values:
+    DNS1:
+      192.168.178.1
+    persistentVolumeClaim:
+      enabled: true
+      existingClaim: ""
+      storageClassName: longhorn
+      accessMode: ReadWriteOnce
+      size: 500Mi
+    ingress:
+      enabled: true
+      hosts:
+        - "pihole.luehr.dev"
+    serviceWeb:
+      loadBalancerIP: 192.168.178.211
+      annotations:
+        metallb.universe.tf/allow-shared-ip: pihole-svc
+      type: LoadBalancer
+    serviceDns:
+      loadBalancerIP: 192.168.178.211
+      annotations:
+        metallb.universe.tf/allow-shared-ip: pihole-svc
+      type: LoadBalancer
+    podDnsConfig:
+      enabled: true
+      policy: "None"
+      nameservers:
+      - 127.0.0.1
+      - 8.8.8.8
+    dnsmasq:
+      customDnsEntries:
+        - address=/pihole.luehr.dev/192.168.178.210
+      customSettings:
+        - interface=eth0
+        - bind-interfaces
