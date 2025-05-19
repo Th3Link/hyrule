@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
     name: paperless
 ---
-apiVersion: source.toolkit.fluxcd.io/v1
+apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: OCIRepository
 metadata:
     name: paperless
@@ -12,7 +12,7 @@ spec:
     interval: 1h
     url: oci://ghcr.io/gabe565/charts/paperless-ngx
     ref:
-        tag: 0.24.1
+        semver: '>= 0.24.x'
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -28,12 +28,14 @@ spec:
     values:
         replicaCount: 1
         image:
-            tag: 2.15.3
+            tag: 2.16.1
         ingress:
             main:
                 enabled: true
                 hosts:
-                    host: paperless.luehr.dev
+                    - host: paperless.luehr.dev
+                      paths:
+                        - path: /
         mariadb:
             enabled: true
             auth:
@@ -47,6 +49,8 @@ spec:
         env:
             TZ: Europe/Berlin
             PAPERLESS_URL: https://paperless.luehr.dev
+            PAPERLESS_OCR_LANGUAGE: deu
+            PAPERLESS_FILENAME_FORMAT: "{{ created }}_{{ title }}_{{ correspondent }}"
         persistence:
             data:
                 enabled: true
@@ -76,46 +80,3 @@ spec:
                 storageClass: longhorn
                 accessMode: ReadWriteOnce
                 size: 500Mi
-sops:
-    age:
-        - recipient: age1g5a0avn7nn3p0zaae5pa2udcnhtxscqxt6p7h2mhvluxe4z7pv8q6gaka0
-          enc: |
-            -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBrUmYyQ251V1E0eEVPOUxI
-            MDVmU3JWYk51SVdsLzNOc1BTWDN4Y0tkMEN3CmNnWmkvS0pJT2VrZGZTc3l0RVBl
-            Q0JRUzgyUmhrYWhOMTcrOW1nUWhQVUkKLS0tIE8xV2RZYW10RU1Xbjd6bW42aWtC
-            L2pSY3NtYkIvZmpkbmlUMnEvM3Q2bzQKyiRUCJ4Q5anuHivE0SuafYS/z8/H55CF
-            SE1H+SmSVWO3HpA6eeZL9FM9xf62c1+4Cy+2xVXiRCk7hEa0/OkbAQ==
-            -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2025-05-19T19:52:31Z"
-    mac: ENC[AES256_GCM,data:ltjdizXbNpYUtVtcwXHq5hhr3qHhBHmtcsFoPlT6Clao3Q1BK4ae20U8L3v7WOYIuoz7QTmgZzB0xtn50eP8um7liUHUxwgIA8AqmbZ+sSOpaw2jCU1Bzc2TWoRQVa320j8qNBrvEW/sQg1RQpJy96WshNMxRC+oOOqUkNezBJI=,iv:rJuow5HX/dOefXTulgjJtahGQ29R9Nvk2xNw6luwgdI=,tag:B8lPDTiy81gHPd0AR0kyMw==,type:str]
-    encrypted_regex: ^(data|stringData)$
-    version: 3.10.2
----
-apiVersion: v1
-kind: Secret
-metadata:
-    name: paperless-db
-    namespace: paperless
-type: Opaque
-stringData:
-    database: ENC[AES256_GCM,data:PfC1whbVjAzA,iv:hFIHHhUjBx4a7boJT1qGx5nJoRQYA8n+RiMfPWvmp+I=,tag:H3qXuIE+R7ZkZGX6TvmnDA==,type:str]
-    username: ENC[AES256_GCM,data:dMToN/XMeXDg,iv:RMCVEBtaljMTsKGKkv6oX7rAMsZsbFF5R7TE7e5qXd8=,tag:IrGGvkJo4AIpMVgKz7tToQ==,type:str]
-    mariadb-root-password: null
-    mariadb-password: null
-    mariadb-replication-password: null
-sops:
-    age:
-        - recipient: age1g5a0avn7nn3p0zaae5pa2udcnhtxscqxt6p7h2mhvluxe4z7pv8q6gaka0
-          enc: |
-            -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBrUmYyQ251V1E0eEVPOUxI
-            MDVmU3JWYk51SVdsLzNOc1BTWDN4Y0tkMEN3CmNnWmkvS0pJT2VrZGZTc3l0RVBl
-            Q0JRUzgyUmhrYWhOMTcrOW1nUWhQVUkKLS0tIE8xV2RZYW10RU1Xbjd6bW42aWtC
-            L2pSY3NtYkIvZmpkbmlUMnEvM3Q2bzQKyiRUCJ4Q5anuHivE0SuafYS/z8/H55CF
-            SE1H+SmSVWO3HpA6eeZL9FM9xf62c1+4Cy+2xVXiRCk7hEa0/OkbAQ==
-            -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2025-05-19T19:52:31Z"
-    mac: ENC[AES256_GCM,data:ltjdizXbNpYUtVtcwXHq5hhr3qHhBHmtcsFoPlT6Clao3Q1BK4ae20U8L3v7WOYIuoz7QTmgZzB0xtn50eP8um7liUHUxwgIA8AqmbZ+sSOpaw2jCU1Bzc2TWoRQVa320j8qNBrvEW/sQg1RQpJy96WshNMxRC+oOOqUkNezBJI=,iv:rJuow5HX/dOefXTulgjJtahGQ29R9Nvk2xNw6luwgdI=,tag:B8lPDTiy81gHPd0AR0kyMw==,type:str]
-    encrypted_regex: ^(data|stringData)$
-    version: 3.10.2
