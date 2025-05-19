@@ -21,9 +21,11 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: external-dns-repo
-      version: 0.17.0
+      version: 0.16.1
   interval: 1m0s
   values:
+    image:
+      tag: 1.17.0
     provider:
       name: pihole
     policy: upsert-only
