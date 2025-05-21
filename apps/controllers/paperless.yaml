@@ -50,7 +50,7 @@ spec:
             TZ: Europe/Berlin
             PAPERLESS_URL: https://paperless.luehr.dev
             PAPERLESS_OCR_LANGUAGE: deu
-            PAPERLESS_FILENAME_FORMAT: "{{ created }}_{{ title }}_{{ correspondent }}"
+            PAPERLESS_FILENAME_FORMAT: "{created}_{title}_{correspondent}"
         persistence:
             data:
                 enabled: true

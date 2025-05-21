@@ -5,3 +5,5 @@ resources:
 - nextcloud-secrets.yaml
 - paperless.yaml
 - paperless-secrets.yaml
+- paperless-samba.yaml
+- paperless-samba-secrets.yaml
