@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: longhorn-system
+  name: metallb
   labels:
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
@@ -11,25 +11,28 @@ metadata:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: longhorn-repo
-  namespace: longhorn-system
+  name: metallb-repo
+  namespace: metallb
 spec:
   interval: 1h
-  url: https://charts.longhorn.io
+  url: https://metallb.github.io/metallb
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: longhorn-release
-  namespace: longhorn-system
+  name: metallb
+  namespace: metallb
 spec:
   chart:
     spec:
-      chart: longhorn
+      chart: metallb
       reconcileStrategy: ChartVersion
       sourceRef:
         kind: HelmRepository
-        name: longhorn-repo
-      version: v1.8.1
+        name: metallb-repo
+      version: 0.14.8
   interval: 1m0s
-  timeout: 15m
+  values:
+    speaker:
+      extraArgs:
+        - --ignore-exclude-lb

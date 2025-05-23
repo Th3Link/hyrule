@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: pihole-system
+  name: pihole
   labels:
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
@@ -12,7 +12,7 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: pihole-repo
-  namespace: pihole-system
+  namespace: pihole
 spec:
   interval: 1h
   url: https://mojo2600.github.io/pihole-kubernetes/
@@ -20,8 +20,8 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: pihole-release
-  namespace: pihole-system
+  name: pihole
+  namespace: pihole
 spec:
   chart:
     spec:
@@ -30,7 +30,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: pihole-repo
-      version: 2.30.0
+      version: 2.31.0
   interval: 1m0s
   values:
     DNS1:
@@ -41,23 +41,23 @@ spec:
       storageClassName: longhorn
       accessMode: ReadWriteOnce
       size: 500Mi
-    dualstack:
+    dualStack:
       enabled: true
     ingress:
       enabled: true
       hosts:
         - "pihole.luehr.dev"
-      path: /admin
+      path: /admin/
       pathType: ImplementationSpecific
     serviceWeb:
       loadBalancerIP: 192.168.178.211
-      loadBalancerIPv6: "fd00::211"
+      loadBalancerIPv6: fd00::211
       annotations:
         metallb.universe.tf/allow-shared-ip: pihole-svc
       type: LoadBalancer
     serviceDns:
       loadBalancerIP: 192.168.178.211
-      loadBalancerIPv6: "fd00::211"
+      loadBalancerIPv6: fd00::211
       annotations:
         metallb.universe.tf/allow-shared-ip: pihole-svc
       type: LoadBalancer
@@ -80,3 +80,40 @@ spec:
       customSettings:
         - interface=eth0
         - bind-interfaces
+    admin:
+      enabled: true
+      existingSecret: pihole-secrets
+      passwordKey: password
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: pihole-web
+#  namespace: pihole
+#spec:
+#  ipFamilyPolicy: RequireDualStack
+#  ipFamilies:
+#    - IPv4
+#    - IPv6
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: pihole-dns-tcp
+#  namespace: pihole
+#spec:
+#  ipFamilyPolicy: RequireDualStack
+#  ipFamilies:
+#    - IPv4
+#    - IPv6
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: pihole-dns-udp
+#  namespace: pihole
+#spec:
+#  ipFamilyPolicy: RequireDualStack
+#  ipFamilies:
+#    - IPv4
+#    - IPv6
