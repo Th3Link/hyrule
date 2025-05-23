@@ -27,6 +27,7 @@ spec:
                 name: nextcloud
             version: 6.6.10
     interval: 1m0s
+    timeout: 15m
     values:
         replicaCount: 1
         nextcloud:

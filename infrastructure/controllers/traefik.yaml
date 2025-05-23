@@ -35,8 +35,12 @@ spec:
     deployment:
       replicas: 2
     service:
-      spec:
-        loadBalancerIP: 192.168.178.210
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: "192.168.178.210,fd00::210"
+      ipFamilyPolicy: RequireDualStack
+      ipFamilies:
+        - IPv4
+        - IPv6
     ports:
       web:
         redirections:
