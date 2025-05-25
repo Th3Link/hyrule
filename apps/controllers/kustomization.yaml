@@ -7,3 +7,6 @@ resources:
 - paperless-secrets.yaml
 - paperless-samba.yaml
 - paperless-samba-secrets.yaml
+- homeassistant.yaml
+- homeassistant-mosquitto.yaml
+- homeassistant-mosquitto-secrets.yaml

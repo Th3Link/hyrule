@@ -1,83 +1,87 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-    name: paperless
+  name: paperless
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: OCIRepository
 metadata:
-    name: paperless
-    namespace: paperless
+  name: paperless
+  namespace: paperless
 spec:
-    interval: 1h
-    url: oci://ghcr.io/gabe565/charts/paperless-ngx
-    ref:
-        semver: '>= 0.24.x'
+  interval: 1h
+  url: oci://ghcr.io/gabe565/charts/paperless-ngx
+  ref:
+    semver: '>= 0.24.x'
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
+  name: paperless
+  namespace: paperless
+spec:
+  chartRef:
+    kind: OCIRepository
     name: paperless
     namespace: paperless
-spec:
-    chartRef:
-        kind: OCIRepository
-        name: paperless
-        namespace: paperless
-    interval: 1m0s
-    timeout: 15m
-    values:
-        replicaCount: 1
-        image:
-            tag: 2.16.1
-        ingress:
-            main:
-                enabled: true
-                hosts:
-                    - host: paperless.luehr.dev
-                      paths:
-                        - path: /
-        mariadb:
-            enabled: true
-            auth:
-                database: paperless
-                username: paperless
-                existingSecret: paperless-db
-            primary:
-                persistence:
-                    enabled: true
-                    storageClass: longhorn
-        env:
-            TZ: Europe/Berlin
-            PAPERLESS_URL: https://paperless.luehr.dev
-            PAPERLESS_OCR_LANGUAGE: deu
-            PAPERLESS_FILENAME_FORMAT: "{created}_{title}_{correspondent}"
+  interval: 1m0s
+  timeout: 15m
+  values:
+    replicaCount: 1
+    image:
+      tag: 2.16.1
+    ingress:
+      main:
+        enabled: true
+        hosts:
+          - host: paperless.luehr.dev
+            paths:
+              - path: /
+    mariadb:
+      enabled: true
+      auth:
+        database: paperless
+        username: paperless
+        existingSecret: paperless-db
+      primary:
         persistence:
-            data:
-                enabled: true
-                retain: true
-                mountPath: /usr/src/paperless/data
-                storageClass: longhorn
-                accessMode: ReadWriteOnce
-                size: 1Gi
-            media:
-                enabled: true
-                retain: true
-                mountPath: /usr/src/paperless/media
-                storageClass: longhorn
-                accessMode: ReadWriteOnce
-                size: 8Gi
-            export:
-                enabled: true
-                retain: true
-                mountPath: /usr/src/paperless/export
-                storageClass: longhorn
-                accessMode: ReadWriteOnce
-                size: 1Gi
-            consume:
-                enabled: true
-                retain: true
-                mountPath: /usr/src/paperless/consume
-                storageClass: longhorn
-                accessMode: ReadWriteOnce
-                size: 500Mi
+          enabled: true
+          storageClass: longhorn
+    env:
+      TZ: Europe/Berlin
+      PAPERLESS_URL: https://paperless.luehr.dev
+      PAPERLESS_OCR_LANGUAGE: deu
+      PAPERLESS_FILENAME_FORMAT: "{created}_{title}_{correspondent}"
+    persistence:
+      data:
+        enabled: true
+        retain: true
+        mountPath: /usr/src/paperless/data
+        storageClass: longhorn
+        accessMode: ReadWriteOnce
+        size: 1Gi
+      media:
+        enabled: true
+        retain: true
+        mountPath: /usr/src/paperless/media
+        storageClass: longhorn
+        accessMode: ReadWriteOnce
+        size: 8Gi
+      export:
+        enabled: true
+        retain: true
+        mountPath: /usr/src/paperless/export
+        storageClass: longhorn
+        accessMode: ReadWriteOnce
+        size: 1Gi
+      consume:
+        enabled: true
+        retain: true
+        mountPath: /usr/src/paperless/consume
+        storageClass: longhorn
+        accessMode: ReadWriteOnce
+        size: 500Mi

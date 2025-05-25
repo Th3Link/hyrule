@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: homeassistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mosquitto
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+    spec:
+      securityContext:
+        runAsUser: 1883
+        runAsGroup: 1883
+        fsGroup: 1883
+      initContainers:
+        - name: copy-mosquitto
+          image: ubuntu
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsUser: 1883
+            runAsGroup: 1883
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /mosquitto/certs /mosquitto/config
+              cp --no-preserve=ownership -a -L /certs/*.key /mosquitto/certs/
+              cp --no-preserve=ownership -a -L /certs/*.crt /mosquitto/certs/
+              cp /mosquitto.conf /mosquitto/config
+              cp /passwd /mosquitto/config
+              cp /acl /mosquitto/config
+              chmod 0700 /mosquitto/config/passwd
+              chmod 0700 /mosquitto/config/acl
+              ls -la /mosquitto
+              ls -la /mosquitto/certs
+              ls -la /mosquitto/config
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+            - name: config
+              mountPath: /mosquitto.conf
+              subPath: mosquitto.conf
+            - name: secrets
+              mountPath: /passwd
+              subPath: passwd
+            - name: secrets
+              mountPath: /acl
+              subPath: acl
+            - name: mosquitto
+              mountPath: /mosquitto
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsUser: 1883
+            runAsGroup: 1883
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          ports:
+            - containerPort: 8883
+          volumeMounts:
+            - name: mosquitto
+              mountPath: /mosquitto
+      volumes:
+        - name: config
+          configMap:
+            name: mosquitto-config
+        - name: secrets
+          secret:
+            secretName: mosquitto-password
+        - name: certs
+          secret:
+            secretName: mosquitto-certificates
+        - name: mosquitto
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-config
+  namespace: homeassistant
+data:
+  mosquitto.conf: |
+    allow_anonymous false
+    password_file /mosquitto/config/passwd
+    acl_file /mosquitto/config/acl
+    
+    listener 8883
+    protocol mqtt
+    
+    cafile /mosquitto/certs/luehr.dev.crt
+    certfile /mosquitto/certs/mqtt.crt
+    keyfile /mosquitto/certs/mqtt.key
+    require_certificate false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto
+  namespace: homeassistant
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.178.213,fd00::213"
+spec:
+  selector:
+    app: mosquitto
+  type: LoadBalancer
+  ports:
+    - name: mqtts
+      port: 8883
+      targetPort: 8883
+      protocol: TCP
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6

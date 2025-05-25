@@ -15,13 +15,24 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: samba
           image: ghcr.io/servercontainers/samba:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
           env:
-            - name: SAMBA_WORKGROUP
+            - name: SAMBA_CONF_WORKGROUP
               value: HYRULE
-            - name: SAMBA_NETBIOS_NAME
+            - name: SAMBA_CONF_SERVERSTRING
               value: samba.paperless
             - name: SAMBA_LOGLEVEL
               value: "2"
@@ -52,9 +63,10 @@ kind: Service
 metadata:
   name: samba
   namespace: paperless
+  annotation:
+    metallb.universe.tf/loadBalancerIPs: "192.168.178.212,fd00::212"
 spec:
   type: LoadBalancer
-  loadBalancerIP: 192.168.178.212
   ports:
     - name: smb
       port: 445
