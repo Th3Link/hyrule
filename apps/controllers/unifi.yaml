@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: unifi
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+metadata:
+  name: unifi
+  namespace: unifi
+spec:
+  interval: 1h
+  url: oci://ghcr.io/mkilchhofer/unifi-chart/unifi
+  ref:
+    semver: '>= 1.12.4'
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: unifi
+  namespace: unifi
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: unifi
+    namespace: unifi
+  interval: 1m0s
+  timeout: 5m
+  values:
+    replicaCount: 1
+    timezone: Europe/Berlin
+    persistence:
+      enabled: true
+      storageClass: longhorn
+    unifiedService:
+      enabled: false
+    controllerService:
+      ingress:
+        enabled: true
+        hosts:
+          - unifi-controller.luehr.dev
+    stunService:
+      enabled: false
+    discoveryService:
+      enabled: false
+    captivePortalService:
+      ingress:
+        enabled: true
+        hosts:
+          - unifi-captive.luehr.dev
+    guiService:
+      enabled: false
+    mongodb:
+      enabled: false
+    customCert:
+      enabled: true
+      isChain: true
+      certName: unifi.crt
+      keyName: unifi.key
+      certSecret: "unifi-certificates"
+    ingress:
+      enabled: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi
+  namespace: unifi
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.178.214,fd00::214"
+spec:
+  selector:
+    app.kubernetes.io/name: unifi
+  type: LoadBalancer
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+      protocol: TCP
+    - name: stun
+      port: 3478
+      targetPort: 3478
+      protocol: UDP
+    - name: inform
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+    - name: discover
+      port: 10001
+      targetPort: 10001
+      protocol: UDP
+    - name: speedtest
+      port: 6789
+      targetPort: 6789
+      protocol: TCP
