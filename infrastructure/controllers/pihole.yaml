@@ -69,6 +69,8 @@ spec:
       - 8.8.8.8
     dnsmasq:
       customDnsEntries:
+        - address=/unifi.luehr.dev/192.168.178.214
+        - address=/unifi.luehr.dev/fd00::214
         - address=/mosquitto.luehr.dev/192.168.178.213
         - address=/mosquitto.luehr.dev/fd00::213
         - address=/pihole.luehr.dev/192.168.178.210

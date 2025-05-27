@@ -35,13 +35,12 @@ spec:
     unifiedService:
       enabled: false
     controllerService:
-      ingress:
-        enabled: true
-        hosts:
-          - unifi-controller.luehr.dev
+      enabled: false
     stunService:
       enabled: false
     discoveryService:
+      enabled: false
+    syslogService:
       enabled: false
     captivePortalService:
       ingress:
@@ -49,6 +48,8 @@ spec:
         hosts:
           - unifi-captive.luehr.dev
     guiService:
+      enabled: false
+    speedtestService:
       enabled: false
     mongodb:
       enabled: false
@@ -60,6 +61,48 @@ spec:
       certSecret: "unifi-certificates"
     ingress:
       enabled: false
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: socat-unifi-relay
+  namespace: unifi
+spec:
+  selector:
+    matchLabels:
+      app: socat-unifi-relay
+  template:
+    metadata:
+      labels:
+        app: socat-unifi-relay
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: socat
+          image: alpine/socat:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - containerPort: 10001
+              hostPort: 10001
+              protocol: UDP
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "[+] Starting UDP4 relay..." &&
+              socat -v UDP4-LISTEN:10001,fork UDP4:unifi.unifi.svc.hyrule.luehr.dev:10001 &
+
+              echo "[+] Starting UDP6 relay..." &&
+              socat -v UDP6-LISTEN:10001,fork UDP6:unifi.unifi.svc.hyrule.luehr.dev:10001 &
+
+              wait -n
 ---
 apiVersion: v1
 kind: Service
@@ -81,6 +124,10 @@ spec:
       port: 443
       targetPort: 8443
       protocol: TCP
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
     - name: stun
       port: 3478
       targetPort: 3478
@@ -97,3 +144,7 @@ spec:
       port: 6789
       targetPort: 6789
       protocol: TCP
+    - name: syslog
+      port: 5514
+      targetPort: 5514
+      protocol: UDP
