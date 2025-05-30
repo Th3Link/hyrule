@@ -12,3 +12,4 @@ resources:
 - homeassistant-mosquitto-secrets.yaml
 - unifi.yaml
 - unifi-secrets.yaml
+- servarr.yaml

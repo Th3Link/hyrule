@@ -85,6 +85,24 @@ spec:
         - address=/ha-codeserver.luehr.dev/192.168.178.210
         - address=/samba.paperless.luehr.dev/fd00::212
         - address=/samba.paperless.luehr.dev/192.168.178.212
+        - address=/bazarr.luehr.dev/fd00::210
+        - address=/bazarr.luehr.dev/192.168.178.210
+        - address=/flaresolverr.luehr.dev/fd00::210
+        - address=/flaresolverr.luehr.dev/192.168.178.210
+        - address=/jellyfin.luehr.dev/fd00::210
+        - address=/jellyfin.luehr.dev/192.168.178.210
+        - address=/jellyseerr.luehr.dev/fd00::210
+        - address=/jellyseerr.luehr.dev/192.168.178.210
+        - address=/lidarr.luehr.dev/fd00::210
+        - address=/lidarr.luehr.dev/192.168.178.210
+        - address=/prowlarr.luehr.dev/fd00::210
+        - address=/prowlarr.luehr.dev/192.168.178.210
+        - address=/radarr.luehr.dev/fd00::210
+        - address=/radarr.luehr.dev/192.168.178.210
+        - address=/readarr.luehr.dev/fd00::210
+        - address=/readarr.luehr.dev/192.168.178.210
+        - address=/sonarr.luehr.dev/fd00::210
+        - address=/sonarr.luehr.dev/192.168.178.210
       customSettings:
         - interface=eth0
         - bind-interfaces
