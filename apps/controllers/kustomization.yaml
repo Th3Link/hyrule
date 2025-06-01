@@ -13,3 +13,5 @@ resources:
 - unifi.yaml
 - unifi-secrets.yaml
 - servarr.yaml
+- nzbget.yaml
+- nzbget-secrets.yaml

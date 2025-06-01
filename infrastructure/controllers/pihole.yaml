@@ -103,6 +103,8 @@ spec:
         - address=/readarr.luehr.dev/192.168.178.210
         - address=/sonarr.luehr.dev/fd00::210
         - address=/sonarr.luehr.dev/192.168.178.210
+        - address=/nzbget.luehr.dev/fd00::210
+        - address=/nzbget.luehr.dev/192.168.178.210
       customSettings:
         - interface=eth0
         - bind-interfaces
