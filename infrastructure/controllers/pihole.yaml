@@ -105,6 +105,18 @@ spec:
         - address=/sonarr.luehr.dev/192.168.178.210
         - address=/nzbget.luehr.dev/fd00::210
         - address=/nzbget.luehr.dev/192.168.178.210
+        - address=/hylia.luehr.dev/fd00::231
+        - address=/hylia.luehr.dev/192.168.178.231
+        - address=/eldin.luehr.dev/fd00::233
+        - address=/eldin.luehr.dev/192.168.178.233
+        - address=/faron.luehr.dev/fd00::232
+        - address=/faron.luehr.dev/192.168.178.232
+        - address=/hyrule.luehr.dev/fd00::230
+        - address=/hyrule.luehr.dev/192.168.178.230
+        - address=/teanau.luehr.dev/fd00::239
+        - address=/teanau.luehr.dev/192.168.178.239
+        - address=/nas.luehr.dev/fd00::239
+        - address=/nas.luehr.dev/192.168.178.239
       customSettings:
         - interface=eth0
         - bind-interfaces
