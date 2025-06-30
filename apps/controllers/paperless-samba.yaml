@@ -36,6 +36,8 @@ spec:
               value: samba.paperless
             - name: SAMBA_LOGLEVEL
               value: "2"
+            - name: AVAHI_DISABLE
+              value: "true"
             - name: SAMBA_VOLUME_CONFIG_consume 
               value: "[consume]; path=/mnt/consume; valid users = paperless; guest ok = no; read only = no; browseable = yes"
             - name: SAMBA_VOLUME_CONFIG_export
