@@ -56,6 +56,8 @@ spec:
       PAPERLESS_URL: https://paperless.luehr.dev
       PAPERLESS_OCR_LANGUAGE: deu
       PAPERLESS_FILENAME_FORMAT: "{created}_{title}_{correspondent}"
+      PAPERLESS_CONSUMPTION_DIR: /usr/src/paperless/consume
+      PAPERLESS_EXPORT_DIR: /usr/src/paperless/export
     persistence:
       data:
         enabled: true
