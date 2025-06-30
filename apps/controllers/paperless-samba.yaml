@@ -26,6 +26,9 @@ spec:
             capabilities:
               drop:
                 - ALL
+              add:
+                - SETGID
+                - SETUID  # wird oft auch benötigt
             runAsNonRoot: false
             seccompProfile:
               type: RuntimeDefault
@@ -34,6 +37,8 @@ spec:
               value: HYRULE
             - name: SAMBA_CONF_SERVERSTRING
               value: samba.paperless
+            - name: SAMBA_CONF_LOG_LEVEL
+              value: "3"
             - name: SAMBA_LOGLEVEL
               value: "2"
             - name: AVAHI_DISABLE
@@ -65,7 +70,7 @@ kind: Service
 metadata:
   name: samba
   namespace: paperless
-  annotation:
+  annotations:
     metallb.universe.tf/loadBalancerIPs: "192.168.178.212,fd00::212"
 spec:
   type: LoadBalancer
@@ -76,3 +81,7 @@ spec:
       protocol: TCP
   selector:
     app: samba
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6
