@@ -76,12 +76,12 @@ spec:
         retain: true
         mountPath: /usr/src/paperless/export
         storageClass: longhorn
-        accessMode: ReadWriteOnce
+        accessMode: ReadWriteMany
         size: 1Gi
       consume:
         enabled: true
         retain: true
         mountPath: /usr/src/paperless/consume
         storageClass: longhorn
-        accessMode: ReadWriteOnce
+        accessMode: ReadWriteMany
         size: 500Mi
