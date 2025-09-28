@@ -46,7 +46,7 @@ spec:
             - name: SAMBA_VOLUME_CONFIG_consume 
               value: "[consume]; path=/mnt/consume; valid users = paperless; guest ok = no; read only = no; browseable = yes"
             - name: SAMBA_VOLUME_CONFIG_export
-              value: "[consume]; path=/mnt/export; valid users = paperless; guest ok = no; read only = yes; browseable = yes"
+              value: "[export]; path=/mnt/export; valid users = paperless; guest ok = no; read only = yes; browseable = yes"
           envFrom:
             - secretRef:
                 name: samba-user-secret
