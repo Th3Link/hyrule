@@ -49,13 +49,19 @@ spec:
               mountPath: /config
             - name: downloads
               mountPath: /downloads
+            - name: nzb
+              mountPath: /nzb
+
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: nzbget-config
         - name: downloads
           persistentVolumeClaim:
-            claimName: nzbget-downloads
+            claimName: nzbget-downloads-rwx
+        - name: nzb
+          persistentVolumeClaim:
+            claimName: nzbget-nzb
 ---
 apiVersion: v1
 kind: Service
@@ -107,11 +113,24 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nzbget-downloads
+  name: nzbget-downloads-rwx
   namespace: nzbget
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 100Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nzbget-nzb
+  namespace: nzbget
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

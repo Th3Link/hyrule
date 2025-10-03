@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: samba
+  namespace: nzbget
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: samba
+  template:
+    metadata:
+      labels:
+        app: samba
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: samba
+          image: ghcr.io/servercontainers/samba:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - SETGID
+                - SETUID  # wird oft auch benötigt
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: SAMBA_CONF_WORKGROUP
+              value: HYRULE
+            - name: SAMBA_CONF_SERVERSTRING
+              value: samba.nzbget
+            - name: SAMBA_CONF_LOG_LEVEL
+              value: "3"
+            - name: SAMBA_LOGLEVEL
+              value: "2"
+            - name: AVAHI_DISABLE
+              value: "true"
+            - name: SAMBA_VOLUME_CONFIG_download
+              value: "[download]; path=/mnt/download; guest ok = yes; read only = no; browseable = yes"
+            - name: SAMBA_VOLUME_CONFIG_nzb
+              value: "[nzb]; path=/mnt/nzb; guest ok = yes; read only = no; browseable = yes"
+          ports:
+            - containerPort: 445
+          volumeMounts:
+            - name: download
+              mountPath: /mnt/download
+            - name: nzb
+              mountPath: /mnt/nzb
+      volumes:
+        - name: download
+          persistentVolumeClaim:
+            claimName: nzbget-downloads-rwx
+        - name: nzb
+          persistentVolumeClaim:
+            claimName: nzbget-nzb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: samba
+  namespace: nzbget
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.178.215,fd00::215"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: smb
+      port: 445
+      targetPort: 445
+      protocol: TCP
+  selector:
+    app: samba
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies:
+    - IPv4
+    - IPv6

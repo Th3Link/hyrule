@@ -86,4 +86,4 @@ spec:
         mountPath: /usr/src/paperless/consume
         storageClass: longhorn
         accessMode: ReadWriteMany
-        size: 500Mi
+        size: 1Gi
