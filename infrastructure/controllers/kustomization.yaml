@@ -5,3 +5,4 @@ resources:
 - traefik-secrets.yaml
 - pihole.yaml
 - pihole-secrets.yaml
+- csi-smb.yaml
