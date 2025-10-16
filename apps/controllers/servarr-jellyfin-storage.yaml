@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-movies-nfs
+  namespace: servarr
+spec:
+  storageClassName: teanau
+  capacity:
+    storage: 10Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.178.239
+    path: /share/CACHEDEV1_DATA/movies
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-movies
+  namespace: servarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Ti
+  volumeName: jellyfin-movies-nfs
+  storageClassName: teanau
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-tvshows-nfs
+  namespace: servarr
+spec:
+  storageClassName: teanau
+  capacity:
+    storage: 10Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.178.239
+    path: /share/CACHEDEV1_DATA/tvshows
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-tvshows
+  namespace: servarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Ti
+  volumeName: jellyfin-tvshows-nfs
+  storageClassName: teanau
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-music-nfs
+  namespace: servarr
+spec:
+  storageClassName: teanau
+  capacity:
+    storage: 10Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.178.239
+    path: /share/CACHEDEV1_DATA/music
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-music
+  namespace: servarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Ti
+  volumeName: jellyfin-music-nfs
+  storageClassName: teanau

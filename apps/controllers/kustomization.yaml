@@ -13,6 +13,7 @@ resources:
 - unifi.yaml
 - unifi-secrets.yaml
 - servarr.yaml
+- servarr-jellyfin-storage.yaml
 - nzbget.yaml
 - nzbget-secrets.yaml
 - nzbget-samba.yaml
