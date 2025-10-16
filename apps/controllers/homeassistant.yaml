@@ -47,7 +47,7 @@ spec:
       enabled: true
       accessMode: ReadWriteOnce
       size: 5Gi
-      storageClass: longhorn
+      storageClass: longhorn-retain
     addons:
       codeserver:
         enabled: true
