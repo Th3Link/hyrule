@@ -48,8 +48,14 @@ spec:
           config:
             storageClass: longhorn-retain
           media:
+            enabled: true
             accessMode: ReadWriteMany
-            storageClass: longhorn-retain
+            existingClaim: jellyfin-media
+          extraExistingClaimMounts:
+            - name: jellyfin-downloads
+              mountPath: /media/downloads
+              readOnly: false
+              existingClaim: jellyfin-downloads
       sonarr:
         ingress:
           enabled: true
@@ -59,6 +65,9 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
+        persistance:
+          storageClass: longhorn-retain
+
       prowlarr:
         ingress:
           enabled: true
@@ -68,6 +77,8 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
+        persistance:
+          storageClass: longhorn-retain
       flaresolverr:
         ingress:
           enabled: true
@@ -77,6 +88,8 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
+        persistance:
+          storageClass: longhorn-retain
       jellyseerr:
         ingress:
           enabled: true
@@ -86,6 +99,8 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
+        persistance:
+          storageClass: longhorn-retain
       bazarr:
         ingress:
           enabled: true
@@ -95,6 +110,8 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
+        persistance:
+          storageClass: longhorn-retain
       radarr:
         ingress:
           enabled: true
@@ -104,6 +121,8 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
+        persistance:
+          storageClass: longhorn-retain
       lidarr:
         ingress:
           enabled: true
@@ -113,3 +132,5 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
+        persistance:
+          storageClass: longhorn-retain
