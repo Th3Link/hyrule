@@ -105,6 +105,8 @@ spec:
         - address=/sonarr.luehr.dev/192.168.178.210
         - address=/nzbget.luehr.dev/fd00::210
         - address=/nzbget.luehr.dev/192.168.178.210
+        - address=/grocy.luehr.dev/fd00::210
+        - address=/grocy.luehr.dev/192.168.178.210
         - address=/hylia.luehr.dev/fd00::231
         - address=/hylia.luehr.dev/192.168.178.231
         - address=/eldin.luehr.dev/fd00::233

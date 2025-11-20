@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: jellyfin-media-nfs
+  name: servarr-jellyfin-media-nfs
   namespace: servarr
 spec:
   storageClassName: teanau
@@ -17,7 +17,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jellyfin-media
+  name: servarr-jellyfin-media
   namespace: servarr
 spec:
   accessModes:
@@ -25,13 +25,13 @@ spec:
   resources:
     requests:
       storage: 10Ti
-  volumeName: jellyfin-media-nfs
+  volumeName: servarr-jellyfin-media-nfs
   storageClassName: teanau
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: jellyfin-downloads-nfs
+  name: servarr-jellyfin-downloads-nfs
   namespace: servarr
 spec:
   storageClassName: teanau
@@ -47,7 +47,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jellyfin-downloads
+  name: servarr-jellyfin-downloads
   namespace: servarr
 spec:
   accessModes:
@@ -55,5 +55,5 @@ spec:
   resources:
     requests:
       storage: 10Ti
-  volumeName: jellyfin-downloads-nfs
+  volumeName: servarr-jellyfin-downloads-nfs
   storageClassName: teanau

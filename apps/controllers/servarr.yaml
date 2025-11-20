@@ -50,12 +50,12 @@ spec:
           media:
             enabled: true
             accessMode: ReadWriteMany
-            existingClaim: jellyfin-media
+            existingClaim: servarr-jellyfin-media
           extraExistingClaimMounts:
-            - name: jellyfin-downloads
+            - name: servarr-jellyfin-downloads
               mountPath: /media/downloads
               readOnly: false
-              existingClaim: jellyfin-downloads
+              existingClaim: servarr-jellyfin-downloads
       sonarr:
         ingress:
           enabled: true
