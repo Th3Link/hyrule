@@ -85,6 +85,8 @@ spec:
         - address=/ha-codeserver.luehr.dev/192.168.178.210
         - address=/samba.paperless.luehr.dev/fd00::212
         - address=/samba.paperless.luehr.dev/192.168.178.212
+        - address=/grocy.luehr.dev/fd00::210
+        - address=/grocy.luehr.dev/192.168.178.210
         - address=/hylia.luehr.dev/fd00::231
         - address=/hylia.luehr.dev/192.168.178.231
         - address=/eldin.luehr.dev/fd00::233
