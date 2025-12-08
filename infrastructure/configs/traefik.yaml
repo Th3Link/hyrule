@@ -1,3 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-luehr-dev
+  namespace: traefik
+spec:
+  secretName: wildcard-luehr-dev
+  renewBefore: 360h
+  dnsNames:
+    - "luehr.dev"
+    - "*.luehr.dev"
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+---
 apiVersion: traefik.io/v1alpha1
 kind: TLSStore
 metadata:
