@@ -34,6 +34,34 @@ spec:
   values:
     deployment:
       replicas: 2
+      ports:
+        websecure:
+          containerPort: 443
+      additionalContainers:
+        - name: tailscale
+          image: tailscale/tailscale:latest
+          serviceAccountName: traefik
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+            privileged: true
+          env:
+          - name: TS_HOSTNAME
+            value: "traefik-vpn"
+          - name: TS_STATE_DIR
+            value: "/var/lib/tailscale"
+          - name: TS_EXTRA_ARGS
+            value: "--login-server=https://lostwoods.luehr.dev:9443 --accept-routes --advertise-tags=tag:ingress --advertise-exit-node"
+          volumeMounts:
+            - name: tailscale-data
+              mountPath: /var/lib/tailscale
+            - name: tailscale-run
+              mountPath: /var/run/tailscale
+      additionalVolumes:
+        - name: tailscale-data
+          emptyDir: {}
+        - name: tailscale-run
+          emptyDir: {}
     service:
       annotations:
         metallb.universe.tf/loadBalancerIPs: "192.168.178.210,fd00::210"
@@ -54,6 +82,8 @@ spec:
           name: default
         domains:
           - main: "*.luehr.dev"
+        port: 443
+        targetPort: 443
     ingressClass:  # @schema additionalProperties: false
       enabled: true
       isDefaultClass: true
@@ -66,3 +96,27 @@ spec:
         level: INFO
       access:
         enabled: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tailscale-secret-access
+  namespace: traefik
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tailscale-secret-access-binding
+  namespace: traefik
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: traefik
+roleRef:
+  kind: Role
+  name: tailscale-secret-access
+  apiGroup: rbac.authorization.k8s.io
