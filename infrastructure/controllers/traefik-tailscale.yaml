@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tailscale-traefik
+  namespace: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tailscale-traefik
+  template:
+    metadata:
+      labels:
+        app: tailscale-traefik
+    spec:
+      serviceAccountName: tailscale
+      containers:
+      - name: tailscale
+        image: tailscale/tailscale:latest
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN", "SYS_MODULE"]
+          privileged: true
+        env:
+        - name: TS_HOSTNAME
+          value: "traefik-vpn"
+        - name: TS_STATE_DIR
+          value: "/var/lib/tailscale"
+        - name: TS_EXTRA_ARGS
+          value: "--login-server=https://lostwoods.luehr.dev:9443 --advertise-tags=tag:ingress"
+        - name: TS_ROUTES
+          value: "192.168.178.0/24,fd00::/64"
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        volumeMounts:
+        - mountPath: /var/lib/tailscale
+          name: tailscale-data
+      volumes:
+      - name: tailscale-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tailscale
+  namespace: traefik
+type: Opaque
+data:
+  # wird automatisch überschrieben – kann leer bleiben
+  state: ""
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tailscale
+  namespace: traefik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tailscale-secret-access
+  namespace: traefik
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["tailscale"]   # <— wichtig! nur das spezifische Secret
+    verbs: ["get", "update", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tailscale-secret-access-binding
+  namespace: traefik
+subjects:
+  - kind: ServiceAccount
+    name: tailscale
+    namespace: traefik
+roleRef:
+  kind: Role
+  name: tailscale-secret-access
+  apiGroup: rbac.authorization.k8s.io
