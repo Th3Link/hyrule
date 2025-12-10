@@ -25,21 +25,12 @@ spec:
             sourceRef:
                 kind: HelmRepository
                 name: servarr
-            version: 1.1.7
+            version: 1.2.0
     interval: 1m0s
     timeout: 15m
     values:
       qbittorrent:
         enabled: false
-      readarr:
-        ingress:
-          enabled: true
-          className: traefik-internal
-          hosts:
-            - host: readarr.luehr.dev
-              paths:
-                - path: /
-                  pathType: Prefix
       jellyfin:
         ingress:
           enabled: true
@@ -55,7 +46,7 @@ spec:
             existingClaim: servarr-jellyfin-media
           extraExistingClaimMounts:
             - name: servarr-jellyfin-downloads
-              mountPath: /media/downloads
+              mountPath: /downloads
               readOnly: false
               existingClaim: servarr-jellyfin-downloads
       sonarr:
@@ -67,9 +58,16 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-        persistance:
+        persistence:
           storageClass: longhorn-retain
-
+          additionalVolumes:
+            - name: sonarr-downloads
+              persistentVolumeClaim:
+                claimName: servarr-jellyfin-downloads
+          additionalMounts:
+            - name: sonarr-downloads
+              mountPath: /downloads
+              readOnly: false
       prowlarr:
         ingress:
           enabled: true
@@ -79,7 +77,7 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-        persistance:
+        persistence:
           storageClass: longhorn-retain
       flaresolverr:
         ingress:
@@ -90,7 +88,7 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-        persistance:
+        persistence:
           storageClass: longhorn-retain
       jellyseerr:
         ingress:
@@ -101,7 +99,7 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-        persistance:
+        persistence:
           storageClass: longhorn-retain
       bazarr:
         ingress:
@@ -112,7 +110,7 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-        persistance:
+        persistence:
           storageClass: longhorn-retain
       radarr:
         ingress:
@@ -123,8 +121,16 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-        persistance:
+        persistence:
           storageClass: longhorn-retain
+          additionalVolumes:
+            - name: radarr-downloads
+              persistentVolumeClaim:
+                claimName: servarr-jellyfin-downloads
+          additionalMounts:
+            - name: radarr-downloads
+              mountPath: /downloads
+              readOnly: false
       lidarr:
         ingress:
           enabled: true
@@ -134,5 +140,13 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-        persistance:
+        persistence:
           storageClass: longhorn-retain
+          additionalVolumes:
+            - name: lidarr-downloads
+              persistentVolumeClaim:
+                claimName: servarr-jellyfin-downloads
+          additionalMounts:
+            - name: lidarr-downloads
+              mountPath: /downloads
+              readOnly: false

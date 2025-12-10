@@ -58,7 +58,7 @@ spec:
             claimName: nzbget-config
         - name: downloads
           persistentVolumeClaim:
-            claimName: nzbget-downloads-rwx
+            claimName: nzbget-downloads-nfs
         - name: nzb
           persistentVolumeClaim:
             claimName: nzbget-nzb
@@ -108,20 +108,6 @@ spec:
   resources:
     requests:
       storage: 1Gi
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: nzbget-downloads-rwx
-  namespace: nzbget
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 100Gi
-
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -134,3 +120,33 @@ spec:
   resources:
     requests:
       storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nzbget-downloads-nfs
+  namespace: nzbget
+spec:
+  storageClassName: teanau
+  capacity:
+    storage: 10Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.178.239
+    path: /downloads
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nzbget-downloads-nfs
+  namespace: nzbget
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Ti
+  volumeName: nzbget-downloads-nfs
+  storageClassName: teanau
