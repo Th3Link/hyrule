@@ -44,6 +44,8 @@ spec:
         ingress:
           enabled: true
           hosts: ["jellyfin.luehr.dev"]
+        nodeSelector:
+          performance: fast
         persistence:
           config:
             storageClass: longhorn-retain
