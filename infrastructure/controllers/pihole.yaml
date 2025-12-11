@@ -75,6 +75,8 @@ spec:
         - address=/mosquitto.luehr.dev/fd00::213
         - address=/pihole.luehr.dev/192.168.178.210
         - address=/pihole.luehr.dev/fd00::210
+        - address=/navidrome.luehr.dev/192.168.178.210
+        - address=/navidrome.luehr.dev/fd00::210
         - address=/nextcloud.luehr.dev/fd00::210
         - address=/nextcloud.luehr.dev/192.168.178.210
         - address=/paperless.luehr.dev/fd00::210
