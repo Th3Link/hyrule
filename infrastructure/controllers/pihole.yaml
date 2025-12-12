@@ -40,7 +40,7 @@ spec:
       existingClaim: ""
       storageClassName: longhorn
       accessMode: ReadWriteOnce
-      size: 500Mi
+      size: 5Gi
     dualStack:
       enabled: true
     ingress:
