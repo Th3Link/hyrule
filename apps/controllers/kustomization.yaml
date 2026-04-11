@@ -10,8 +10,6 @@ resources:
 - homeassistant.yaml
 - homeassistant-mosquitto.yaml
 - homeassistant-mosquitto-secrets.yaml
-- unifi.yaml
-- unifi-secrets.yaml
 - servarr.yaml
 - servarr-jellyfin-storage.yaml
 - nzbget.yaml
