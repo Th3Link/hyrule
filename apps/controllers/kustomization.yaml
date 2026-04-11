@@ -10,6 +10,4 @@ resources:
 - homeassistant.yaml
 - homeassistant-mosquitto.yaml
 - homeassistant-mosquitto-secrets.yaml
-- unifi.yaml
-- unifi-secrets.yaml
 - navidrome.yaml
