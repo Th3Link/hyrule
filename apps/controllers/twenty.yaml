@@ -1,0 +1,334 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: twenty
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+---
+# ---------------------------------------------------------------------------
+# Postgres (Twenty's primary datastore)
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: twenty-postgres-data
+  namespace: twenty
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twenty-postgres
+  namespace: twenty
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: twenty-postgres
+  template:
+    metadata:
+      labels:
+        app: twenty-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: POSTGRES_DB
+              value: default
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: twenty-secrets
+                  key: PG_DATABASE_PASSWORD
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "localhost", "-d", "postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "localhost", "-d", "postgres"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: twenty-postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: twenty-postgres
+  namespace: twenty
+spec:
+  selector:
+    app: twenty-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# ---------------------------------------------------------------------------
+# Redis (job queue / cache, no persistence needed - matches upstream compose)
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twenty-redis
+  namespace: twenty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twenty-redis
+  template:
+    metadata:
+      labels:
+        app: twenty-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server", "--maxmemory-policy", "noeviction"]
+          securityContext:
+            allowPrivilegeEscalation: false
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: twenty-redis
+  namespace: twenty
+spec:
+  selector:
+    app: twenty-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+# ---------------------------------------------------------------------------
+# Server (web UI + API + runs DB migrations & cron registration)
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: twenty-server-data
+  namespace: twenty
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twenty-server
+  namespace: twenty
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: twenty-server
+  template:
+    metadata:
+      labels:
+        app: twenty-server
+    spec:
+      initContainers:
+        - name: wait-for-db-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z twenty-postgres 5432; do echo waiting for postgres; sleep 2; done
+              until nc -z twenty-redis 6379; do echo waiting for redis; sleep 2; done
+      containers:
+        - name: server
+          image: twentycrm/twenty:v1.19.1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_PORT
+              value: "3000"
+            - name: PG_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: twenty-secrets
+                  key: PG_DATABASE_URL
+            - name: SERVER_URL
+              value: https://twenty.luehr.dev
+            - name: REDIS_URL
+              value: redis://twenty-redis:6379
+            - name: STORAGE_TYPE
+              value: local
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: twenty-secrets
+                  key: ENCRYPTION_KEY
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: twenty-secrets
+                  key: APP_SECRET
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          volumeMounts:
+            - name: server-data
+              mountPath: /app/packages/twenty-server/.local-storage
+      volumes:
+        - name: server-data
+          persistentVolumeClaim:
+            claimName: twenty-server-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: twenty-server
+  namespace: twenty
+spec:
+  selector:
+    app: twenty-server
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: twenty
+  namespace: twenty
+spec:
+  rules:
+    - host: twenty.luehr.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: twenty-server
+                port:
+                  number: 3000
+---
+# ---------------------------------------------------------------------------
+# Worker (background jobs - shares server-data volume, no ports/ingress)
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twenty-worker
+  namespace: twenty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twenty-worker
+  template:
+    metadata:
+      labels:
+        app: twenty-worker
+    spec:
+      initContainers:
+        - name: wait-for-server
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until nc -z twenty-server 3000; do echo waiting for server; sleep 2; done"
+      containers:
+        - name: worker
+          image: twentycrm/twenty:v1.19.1
+          command: ["yarn", "worker:prod"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: PG_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: twenty-secrets
+                  key: PG_DATABASE_URL
+            - name: SERVER_URL
+              value: https://twenty.luehr.dev
+            - name: REDIS_URL
+              value: redis://twenty-redis:6379
+            - name: DISABLE_DB_MIGRATIONS
+              value: "true"
+            - name: DISABLE_CRON_JOBS_REGISTRATION
+              value: "true"
+            - name: STORAGE_TYPE
+              value: local
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: twenty-secrets
+                  key: ENCRYPTION_KEY
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: twenty-secrets
+                  key: APP_SECRET
+          volumeMounts:
+            - name: server-data
+              mountPath: /app/packages/twenty-server/.local-storage
+      volumes:
+        - name: server-data
+          persistentVolumeClaim:
+            claimName: twenty-server-data

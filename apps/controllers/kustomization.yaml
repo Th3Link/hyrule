@@ -11,3 +11,5 @@ resources:
 - homeassistant-mosquitto.yaml
 - homeassistant-mosquitto-secrets.yaml
 - navidrome.yaml
+- twenty.yaml
+- twenty-secrets.yaml
