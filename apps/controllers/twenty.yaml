@@ -43,12 +43,12 @@ spec:
       containers:
         - name: postgres
           image: postgres:16
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+          # No dropped capabilities here: the official postgres image starts as
+          # root and chowns/chmods the data dir itself before switching to the
+          # postgres user - dropping ALL breaks that startup step.
           env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_DB
               value: default
             - name: POSTGRES_USER
@@ -111,9 +111,12 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
-          command: ["redis-server", "--maxmemory-policy", "noeviction"]
+          command: ["redis-server", "--maxmemory-policy", "noeviction", "--save", ""]
           securityContext:
             allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 6379
           readinessProbe:
@@ -149,7 +152,7 @@ metadata:
   namespace: twenty
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   storageClassName: longhorn-retain
   resources:
     requests:
@@ -215,17 +218,22 @@ spec:
                 secretKeyRef:
                   name: twenty-secrets
                   key: APP_SECRET
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
           readinessProbe:
             httpGet:
               path: /healthz
               port: 3000
-            initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz
               port: 3000
-            initialDelaySeconds: 30
             periodSeconds: 15
           volumeMounts:
             - name: server-data
