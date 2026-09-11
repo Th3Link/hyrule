@@ -13,3 +13,5 @@ resources:
 - navidrome.yaml
 - twenty.yaml
 - twenty-secrets.yaml
+- siyuan.yaml
+- siyuan-secrets.yaml
