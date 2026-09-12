@@ -25,10 +25,16 @@ spec:
             sourceRef:
                 kind: HelmRepository
                 name: nextcloud
-            version: 6.6.10
+            version: 7.0.4
     interval: 1m0s
-    timeout: 15m
+    timeout: 45m
+    upgrade:
+        remediation:
+            retries: 3
     values:
+        global:
+            security:
+                allowInsecureImages: true
         replicaCount: 1
         nextcloud:
             host: nextcloud.luehr.dev
@@ -53,6 +59,10 @@ spec:
                 databaseKey: database
         mariadb:
             enabled: true
+            image:
+                registry: docker.io
+                repository: bitnamilegacy/mariadb
+                tag: 11.4.6-debian-12-r0
             auth:
                 database: nextcloud
                 username: nextcloud
