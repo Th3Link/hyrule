@@ -25,7 +25,7 @@ spec:
             sourceRef:
                 kind: HelmRepository
                 name: nextcloud
-            version: 7.0.4
+            version: 8.9.1
     interval: 1m0s
     timeout: 45m
     upgrade:
