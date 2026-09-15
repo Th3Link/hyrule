@@ -32,6 +32,13 @@ spec:
       qbittorrent:
         enabled: false
       jellyfin:
+        # ACHTUNG: Chart-Default ist 10.10.1, aktuell verfuegbar waere 12.0ubu2604-ls48 -
+        # das ist ein Sprung ueber mehrere Major-Versionen. Vor dem Pinnen erst pruefen,
+        # ob ein direkter Sprung unterstuetzt wird oder Zwischenschritte noetig sind.
+        # image:
+        #   tag: "12.0ubu2604-ls48"
+        image:
+          tag: "10.11.11ubu2604-ls47"
         ingress:
           enabled: true
           hosts: ["jellyfin.luehr.dev"]
@@ -51,6 +58,8 @@ spec:
               readOnly: false
               existingClaim: servarr-jellyfin-downloads
       sonarr:
+        image:
+          tag: "4.0.19.2979-ls322"
         ingress:
           enabled: true
           className: traefik-internal
@@ -70,6 +79,8 @@ spec:
               mountPath: /downloads
               readOnly: false
       prowlarr:
+        image:
+          tag: "2.5.2.5491-ls159"
         ingress:
           enabled: true
           className: traefik-internal
@@ -81,6 +92,8 @@ spec:
         persistence:
           storageClass: longhorn-retain
       flaresolverr:
+        image:
+          tag: "v3.5.0"
         ingress:
           enabled: true
           className: traefik-internal
@@ -92,6 +105,8 @@ spec:
         persistence:
           storageClass: longhorn-retain
       seerr:
+        image:
+          tag: "v3.4.1"
         podSecurityContext:
           fsGroup: 1000
           fsGroupChangePolicy: OnRootMismatch
@@ -117,6 +132,8 @@ spec:
         persistence:
           storageClass: longhorn-retain
       bazarr:
+        image:
+          tag: "v1.6.1-ls364"
         ingress:
           enabled: true
           className: traefik-internal
@@ -128,6 +145,8 @@ spec:
         persistence:
           storageClass: longhorn-retain
       radarr:
+        image:
+          tag: "6.3.0.10514-ls316"
         ingress:
           enabled: true
           className: traefik-internal
@@ -147,6 +166,8 @@ spec:
               mountPath: /downloads
               readOnly: false
       lidarr:
+        image:
+          tag: "3.1.0.4875-ls40"
         ingress:
           enabled: true
           className: traefik-internal
