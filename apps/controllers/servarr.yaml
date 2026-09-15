@@ -32,13 +32,8 @@ spec:
       qbittorrent:
         enabled: false
       jellyfin:
-        # ACHTUNG: Chart-Default ist 10.10.1, aktuell verfuegbar waere 12.0ubu2604-ls48 -
-        # das ist ein Sprung ueber mehrere Major-Versionen. Vor dem Pinnen erst pruefen,
-        # ob ein direkter Sprung unterstuetzt wird oder Zwischenschritte noetig sind.
-        # image:
-        #   tag: "12.0ubu2604-ls48"
         image:
-          tag: "10.11.11ubu2604-ls47"
+          tag: "12.0ubu2604-ls48"
         ingress:
           enabled: true
           hosts: ["jellyfin.luehr.dev"]
