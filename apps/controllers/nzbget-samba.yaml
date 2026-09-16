@@ -57,7 +57,7 @@ spec:
       volumes:
         - name: download
           persistentVolumeClaim:
-            claimName: nzbget-downloads-rwx
+            claimName: nzbget-downloads-nfs
         - name: nzb
           persistentVolumeClaim:
             claimName: nzbget-nzb
