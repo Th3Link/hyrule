@@ -5,3 +5,4 @@ resources:
 - traefik.yaml
 - pihole.yaml
 - pihole-secrets.yaml
+- kubevirt

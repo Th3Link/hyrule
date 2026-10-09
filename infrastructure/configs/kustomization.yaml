@@ -4,3 +4,4 @@ resources:
 - cert-manager-secrets.yaml
 - cert-manager-issuer.yaml
 - traefik.yaml
+- kubevirt.yaml
