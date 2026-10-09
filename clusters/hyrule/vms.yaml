@@ -1,0 +1,22 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vms
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infra-configs
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./vms
+  prune: true
+  # no wait: image import/clone takes longer than the timeout
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

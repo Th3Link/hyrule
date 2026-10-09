@@ -1,0 +1,16 @@
+---
+# Golden image, imported once by CDI. Agent VMs clone their root disk from it.
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: arch-golden
+  annotations:
+    cdi.kubevirt.io/storage.deleteAfterCompletion: "false"
+spec:
+  storage:
+    resources:
+      requests:
+        storage: 10Gi
+  source:
+    http:
+      url: https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2

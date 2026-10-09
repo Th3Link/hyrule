@@ -1,0 +1,49 @@
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: midna
+spec:
+  runStrategy: Always
+  dataVolumeTemplates:
+    - metadata:
+        name: midna-root
+      spec:
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+        source:
+          pvc:
+            namespace: vms
+            name: arch-golden
+  template:
+    metadata:
+      labels:
+        vm: midna
+    spec:
+      domain:
+        cpu:
+          cores: 6
+        memory:
+          guest: 16Gi
+        devices:
+          disks:
+            - name: root
+              disk: { bus: virtio }
+            - name: cloudinit
+              disk: { bus: virtio }
+          interfaces:
+            - name: default
+              masquerade: {}
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: root
+          dataVolume:
+            name: midna-root
+        - name: cloudinit
+          cloudInitNoCloud:
+            secretRef:
+              name: agent-cloudinit

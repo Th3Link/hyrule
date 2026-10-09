@@ -1,0 +1,37 @@
+---
+# Shared cloud-init for all agent VMs. Hostname is taken from the VM name.
+# If you add tokens here, encrypt this file with sops!
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agent-cloudinit
+type: Opaque
+stringData:
+  userdata: |
+    #cloud-config
+    users:
+      - name: marc
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        shell: /bin/bash
+        ssh_authorized_keys:
+          - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHMhqgRbcaB/sGn9nbfZg/EKx2ncw5mGHFxLFSelZhHt marc@luehr.dev
+    growpart:
+      mode: auto
+    write_files:
+      # No GPU in the VM: keep WebKitGTK on software rendering
+      - path: /etc/profile.d/webkit.sh
+        content: |
+          export WEBKIT_DISABLE_COMPOSITING_MODE=1
+          export WEBKIT_DISABLE_DMABUF_RENDERER=1
+    runcmd:
+      - pacman-key --init
+      - pacman-key --populate archlinux
+      - >-
+        pacman -Syu --noconfirm --needed
+        git base-devel tmux ripgrep jq
+        rustup cargo-nextest nodejs npm
+        webkit2gtk-4.1 gtk3 libappindicator-gtk3 librsvg
+        xorg-server-xvfb xdotool imagemagick x11vnc
+      - su - marc -c 'rustup default stable'
+      - su - marc -c 'cargo install tauri-driver --locked'
+      - su - marc -c 'curl -fsSL https://claude.ai/install.sh | bash'
