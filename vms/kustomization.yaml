@@ -7,3 +7,4 @@ resources:
 - agent-cloudinit.yaml
 - navi.yaml
 - midna.yaml
+- impa.yaml

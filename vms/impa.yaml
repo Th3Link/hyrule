@@ -1,0 +1,51 @@
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: impa
+spec:
+  runStrategy: Always
+  dataVolumeTemplates:
+    - metadata:
+        name: impa-root
+      spec:
+        storage:
+          resources:
+            requests:
+              storage: 40Gi
+        source:
+          pvc:
+            namespace: vms
+            name: arch-golden
+  template:
+    metadata:
+      labels:
+        vm: impa
+    spec:
+      domain:
+        cpu:
+          cores: 2
+        memory:
+          guest: 4Gi
+        devices:
+          disks:
+            - name: root
+              disk: { bus: virtio }
+            - name: cloudinit
+              disk: { bus: virtio }
+          interfaces:
+            - name: default
+              masquerade: {}
+              # fixed MAC: cloud-init binds the guest network config to it
+              macAddress: "02:4b:56:00:00:02"
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: root
+          dataVolume:
+            name: impa-root
+        - name: cloudinit
+          cloudInitNoCloud:
+            secretRef:
+              name: agent-cloudinit
