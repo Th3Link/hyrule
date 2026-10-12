@@ -15,14 +15,11 @@ stringData:
         shell: /bin/bash
         ssh_authorized_keys:
           - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHMhqgRbcaB/sGn9nbfZg/EKx2ncw5mGHFxLFSelZhHt marc@luehr.dev
+
     growpart:
       mode: auto
+
     write_files:
-      # No GPU in the VM: keep WebKitGTK on software rendering
-      - path: /etc/profile.d/webkit.sh
-        content: |
-          export WEBKIT_DISABLE_COMPOSITING_MODE=1
-          export WEBKIT_DISABLE_DMABUF_RENDERER=1
       # Match eth0 by name, not by MAC (sorts before cloud-init's 10-cloud-init-eth0.network)
       - path: /etc/systemd/network/05-eth0.network
         content: |
@@ -31,7 +28,36 @@ stringData:
 
           [Network]
           DHCP=yes
+
+      # No GPU in the VM: keep WebKitGTK on software rendering
+      - path: /etc/profile.d/webkit.sh
+        content: |
+          export WEBKIT_DISABLE_COMPOSITING_MODE=1
+          export WEBKIT_DISABLE_DMABUF_RENDERER=1
+
+      # Claude Code Remote Control as a user service. Installed but NOT enabled:
+      # log in once with `claude` + `/login`, accept the prompts of
+      # `claude remote-control` in ~/work, then:
+      #   systemctl --user enable --now claude-rc && sudo loginctl enable-linger marc
+      - path: /home/marc/.config/systemd/user/claude-rc.service
+        owner: marc:marc
+        defer: true
+        content: |
+          [Unit]
+          Description=Claude Code Remote Control
+          After=network-online.target
+
+          [Service]
+          WorkingDirectory=%h/work
+          ExecStart=%h/.local/bin/claude remote-control --name %H --spawn worktree
+          Restart=on-failure
+          RestartSec=15
+
+          [Install]
+          WantedBy=default.target
+
     runcmd:
+      # Base system and toolchain
       - pacman-key --init
       - pacman-key --populate archlinux
       - >-
@@ -42,4 +68,7 @@ stringData:
         xorg-server-xvfb xdotool imagemagick x11vnc
       - su - marc -c 'rustup default stable'
       - su - marc -c 'cargo install tauri-driver --locked'
+      # Claude Code via the official installer (lands in ~/.local/bin)
       - su - marc -c 'curl -fsSL https://claude.ai/install.sh | bash'
+      - su - marc -c 'mkdir -p ~/work'
+      - chown -R marc:marc /home/marc/.config
