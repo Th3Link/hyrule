@@ -12,7 +12,7 @@ spec:
         storage:
           resources:
             requests:
-              storage: 100Gi
+              storage: 200Gi
         source:
           pvc:
             namespace: vms
@@ -36,6 +36,8 @@ spec:
           interfaces:
             - name: default
               masquerade: {}
+              # fixed MAC: cloud-init binds the guest network config to it
+              macAddress: "6e:a9:ed:9f:b5:f0"
       networks:
         - name: default
           pod: {}

@@ -23,12 +23,20 @@ stringData:
         content: |
           export WEBKIT_DISABLE_COMPOSITING_MODE=1
           export WEBKIT_DISABLE_DMABUF_RENDERER=1
+      # Match eth0 by name, not by MAC (sorts before cloud-init's 10-cloud-init-eth0.network)
+      - path: /etc/systemd/network/05-eth0.network
+        content: |
+          [Match]
+          Name=eth0
+
+          [Network]
+          DHCP=yes
     runcmd:
       - pacman-key --init
       - pacman-key --populate archlinux
       - >-
         pacman -Syu --noconfirm --needed
-        git base-devel tmux ripgrep jq
+        git github-cli base-devel tmux ripgrep jq
         rustup cargo-nextest nodejs npm
         webkit2gtk-4.1 gtk3 libappindicator-gtk3 librsvg
         xorg-server-xvfb xdotool imagemagick x11vnc
