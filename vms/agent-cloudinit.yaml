@@ -35,9 +35,19 @@ stringData:
           export WEBKIT_DISABLE_COMPOSITING_MODE=1
           export WEBKIT_DISABLE_DMABUF_RENDERER=1
 
+      # User tool dirs (claude, cargo installs) on PATH for login shells ...
+      - path: /etc/profile.d/user-bin.sh
+        content: |
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+      # ... and for systemd user services (claude-rc and the sessions it spawns)
+      - path: /etc/environment.d/10-user-bin.conf
+        content: |
+          PATH=$HOME/.local/bin:$HOME/.cargo/bin:$PATH
+
       # Claude Code Remote Control as a user service. Installed but NOT enabled:
-      # log in once with `claude` + `/login`, accept the prompts of
-      # `claude remote-control` in ~/work, then:
+      # log in once with `claude` + `/login`, run `claude` in ~/work to accept
+      # the trust dialog and `claude remote-control` to enable it, then:
       #   systemctl --user enable --now claude-rc && sudo loginctl enable-linger marc
       - path: /home/marc/.config/systemd/user/claude-rc.service
         owner: marc:marc
@@ -49,7 +59,7 @@ stringData:
 
           [Service]
           WorkingDirectory=%h/work
-          ExecStart=%h/.local/bin/claude remote-control --name %H --spawn worktree
+          ExecStart=%h/.local/bin/claude remote-control --name %H --spawn same-dir
           Restart=on-failure
           RestartSec=15
 
@@ -68,7 +78,10 @@ stringData:
         xorg-server-xvfb xdotool imagemagick x11vnc
       - su - marc -c 'rustup default stable'
       - su - marc -c 'cargo install tauri-driver --locked'
+      - su - marc -c 'cargo install --locked --git https://github.com/styler-ai/ProjectAtlas --tag v0.4.5 projectatlas-cli'
       # Claude Code via the official installer (lands in ~/.local/bin)
       - su - marc -c 'curl -fsSL https://claude.ai/install.sh | bash'
       - su - marc -c 'mkdir -p ~/work'
+      # ProjectAtlas MCP for all sessions; uses the .projectatlas/ of the repo it runs in
+      - su - marc -c '~/.local/bin/claude mcp add --scope user projectatlas -- ~/.cargo/bin/projectatlas mcp --nearest-project'
       - chown -R marc:marc /home/marc/.config
