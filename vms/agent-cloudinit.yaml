@@ -59,7 +59,7 @@ stringData:
 
           [Service]
           WorkingDirectory=%h/work
-          ExecStart=%h/.local/bin/claude remote-control --name %H --spawn same-dir
+          ExecStart=%h/.local/bin/claude remote-control --name %H --spawn same-dir --permission-mode bypassPermissions
           Restart=on-failure
           RestartSec=15
 
