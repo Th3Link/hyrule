@@ -1,0 +1,46 @@
+# SSH into the agent VMs on a fixed LAN IP (MetalLB)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: navi-ssh
+  annotations:
+    metallb.io/loadBalancerIPs: 192.168.178.221
+spec:
+  type: LoadBalancer
+  selector:
+    vm.kubevirt.io/name: navi
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 22
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: midna-ssh
+  annotations:
+    metallb.io/loadBalancerIPs: 192.168.178.222
+spec:
+  type: LoadBalancer
+  selector:
+    vm.kubevirt.io/name: midna
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 22
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: impa-ssh
+  annotations:
+    metallb.io/loadBalancerIPs: 192.168.178.223
+spec:
+  type: LoadBalancer
+  selector:
+    vm.kubevirt.io/name: impa
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 22
