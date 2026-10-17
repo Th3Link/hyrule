@@ -33,9 +33,9 @@ spec:
               topologyKey: kubernetes.io/hostname
       domain:
         cpu:
-          cores: 6
+          cores: 8
         memory:
-          guest: 16Gi
+          guest: 20Gi
         devices:
           disks:
             - name: root
