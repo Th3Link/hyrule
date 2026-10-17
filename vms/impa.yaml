@@ -12,7 +12,7 @@ spec:
         storage:
           resources:
             requests:
-              storage: 40Gi
+              storage: 200Gi
         source:
           pvc:
             namespace: vms
@@ -21,12 +21,21 @@ spec:
     metadata:
       labels:
         vm: impa
+        vm-size: large
     spec:
+      # One large VM per node
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  vm-size: large
+              topologyKey: kubernetes.io/hostname
       domain:
         cpu:
-          cores: 2
+          cores: 6
         memory:
-          guest: 4Gi
+          guest: 16Gi
         devices:
           disks:
             - name: root

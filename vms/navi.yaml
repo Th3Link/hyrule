@@ -21,7 +21,16 @@ spec:
     metadata:
       labels:
         vm: navi
+        vm-size: large
     spec:
+      # One large VM per node
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  vm-size: large
+              topologyKey: kubernetes.io/hostname
       domain:
         cpu:
           cores: 6
