@@ -1,0 +1,14 @@
+# Disposable VM disks (vms/): a single replica, kept on the node the VM runs on.
+# If the disk is lost, the VM gets re-provisioned from the golden image.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-vm
+provisioner: driver.longhorn.io
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  dataLocality: "best-effort"
+  staleReplicaTimeout: "30"

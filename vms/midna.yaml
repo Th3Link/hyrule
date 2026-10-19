@@ -10,6 +10,7 @@ spec:
         name: midna-root
       spec:
         storage:
+          storageClassName: longhorn-vm
           resources:
             requests:
               storage: 200Gi
