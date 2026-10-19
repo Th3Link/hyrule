@@ -1,0 +1,69 @@
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: phai
+spec:
+  runStrategy: Always
+  dataVolumeTemplates:
+    - metadata:
+        name: phai-root
+      spec:
+        storage:
+          resources:
+            requests:
+              storage: 200Gi
+        source:
+          pvc:
+            namespace: vms
+            name: arch-golden
+  template:
+    metadata:
+      labels:
+        vm: phai
+        vm-size: large
+    spec:
+      # One large VM per node
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  vm-size: large
+              topologyKey: kubernetes.io/hostname
+        # Prefer ghirahim
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [ghirahim]
+      domain:
+        cpu:
+          cores: 8
+        memory:
+          guest: 20Gi
+        devices:
+          disks:
+            - name: root
+              disk: { bus: virtio }
+            - name: cloudinit
+              disk: { bus: virtio }
+          interfaces:
+            - name: default
+              masquerade: {}
+              # fixed MAC: cloud-init binds the guest network config to it
+              macAddress: "02:4b:56:00:00:03"
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: root
+          dataVolume:
+            name: phai-root
+        - name: cloudinit
+          cloudInitNoCloud:
+            secretRef:
+              name: agent-cloudinit

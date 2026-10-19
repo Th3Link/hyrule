@@ -8,4 +8,5 @@ resources:
 - navi.yaml
 - midna.yaml
 - impa.yaml
+- phai.yaml
 - ssh.yaml
