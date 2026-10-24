@@ -57,7 +57,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: backup
-              image: docker.io/library/nextcloud:34.0.3-apache
+              image: docker.io/library/nextcloud:35.0.2-apache
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
