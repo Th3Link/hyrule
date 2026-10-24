@@ -83,10 +83,11 @@ spec:
                   find /dumps -name 'nextcloud-*' -mtime +14 -delete
                   ls -lh /dumps
               volumeMounts:
+                # The DB runs in WAL mode: SQLite needs to create nextcloud.db-shm
+                # next to it even for reading, so the data dir is mounted rw.
                 - name: nextcloud
-                  mountPath: /nc/data/nextcloud.db
-                  subPath: data/nextcloud.db
-                  readOnly: true
+                  mountPath: /nc/data
+                  subPath: data
                 - name: nextcloud
                   mountPath: /nc/config
                   subPath: config
