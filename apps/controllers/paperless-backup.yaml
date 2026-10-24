@@ -1,0 +1,76 @@
+---
+# Daily logical dump of the paperless database into the db-dumps PVC.
+# The PVC is backed up to S3 by the Longhorn recurring job (group "backup").
+# Restore: see docs/backup-restore.md
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-dumps
+  namespace: paperless
+  labels:
+    recurring-job-group.longhorn.io/backup: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-dump
+  namespace: paperless
+spec:
+  schedule: "0 2 * * *"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            fsGroupChangePolicy: OnRootMismatch
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dump
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              # same image as the database server (Renovate bumps both together)
+              image: bitnamilegacy/mariadb:11.4.4-debian-12-r0
+              env:
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-db
+                      key: mariadb-root-password
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  f=/dumps/paperless-$(date +%Y%m%d-%H%M%S).sql.gz
+                  mariadb-dump -h paperless-mariadb -u root --single-transaction --routines --triggers --events \
+                    --databases paperless | gzip > "$f.tmp"
+                  gzip -t "$f.tmp" && mv "$f.tmp" "$f"
+                  find /dumps -name 'paperless-*.sql.gz' -mtime +14 -delete
+                  ls -lh /dumps
+              volumeMounts:
+                - name: dumps
+                  mountPath: /dumps
+          volumes:
+            - name: dumps
+              persistentVolumeClaim:
+                claimName: db-dumps

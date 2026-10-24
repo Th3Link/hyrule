@@ -3,8 +3,10 @@ kind: Kustomization
 resources:
 - nextcloud.yaml
 - nextcloud-secrets.yaml
+- nextcloud-backup.yaml
 - paperless.yaml
 - paperless-secrets.yaml
+- paperless-backup.yaml
 - paperless-samba.yaml
 - paperless-samba-secrets.yaml
 - homeassistant.yaml

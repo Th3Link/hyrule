@@ -1,0 +1,134 @@
+---
+# Daily logical dump of the nextcloud database into the db-dumps PVC.
+# The PVC is backed up to S3 by the Longhorn recurring job (group "backup").
+# Restore: see docs/backup-restore.md
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-dumps
+  namespace: nextcloud
+  labels:
+    recurring-job-group.longhorn.io/backup: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-dump
+  namespace: nextcloud
+spec:
+  schedule: "0 2 * * *"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            fsGroupChangePolicy: OnRootMismatch
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dump
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              # same image as the database server (Renovate bumps both together)
+              image: docker.io/bitnamilegacy/mariadb:11.8.3-debian-12-r0
+              env:
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: nextcloud-db
+                      key: mariadb-root-password
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  f=/dumps/nextcloud-$(date +%Y%m%d-%H%M%S).sql.gz
+                  mariadb-dump -h nextcloud-mariadb -u root --single-transaction --routines --triggers --events \
+                    --databases nextcloud | gzip > "$f.tmp"
+                  gzip -t "$f.tmp" && mv "$f.tmp" "$f"
+                  find /dumps -name 'nextcloud-*.sql.gz' -mtime +14 -delete
+                  ls -lh /dumps
+              volumeMounts:
+                - name: dumps
+                  mountPath: /dumps
+          volumes:
+            - name: dumps
+              persistentVolumeClaim:
+                claimName: db-dumps
+---
+# Daily copy of the Nextcloud config (config.php holds instanceid, passwordsalt,
+# secret - required to restore the instance). The 600Gi volume is RWO, so the
+# job runs on the Nextcloud node and mounts only the config subPath read-only.
+# No fsGroup here: it would chown the whole 600Gi volume.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: config-backup
+  namespace: nextcloud
+spec:
+  schedule: "15 2 * * *"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: nextcloud
+                      app.kubernetes.io/component: app
+                  topologyKey: kubernetes.io/hostname
+          containers:
+            - name: backup
+              image: busybox:1.38
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  f=/dumps/nextcloud-config-$(date +%Y%m%d-%H%M%S).tar.gz
+                  tar -czf "$f.tmp" -C /nc config
+                  gzip -t "$f.tmp" && mv "$f.tmp" "$f"
+                  find /dumps -name 'nextcloud-config-*.tar.gz' -mtime +14 -delete
+                  ls -lh /dumps
+              volumeMounts:
+                - name: nextcloud
+                  mountPath: /nc/config
+                  subPath: config
+                  readOnly: true
+                - name: dumps
+                  mountPath: /dumps
+          volumes:
+            - name: nextcloud
+              persistentVolumeClaim:
+                claimName: nextcloud-nextcloud
+                readOnly: true
+            - name: dumps
+              persistentVolumeClaim:
+                claimName: db-dumps
