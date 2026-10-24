@@ -42,13 +42,13 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:16
+          image: postgres:18
           # No dropped capabilities here: the official postgres image starts as
           # root and chowns/chmods the data dir itself before switching to the
           # postgres user - dropping ALL breaks that startup step.
+          # Postgres 18+ keeps its data in /var/lib/postgresql/<major>/docker
+          # (default PGDATA), so the volume is mounted one level up.
           env:
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_DB
               value: default
             - name: POSTGRES_USER
@@ -72,7 +72,7 @@ spec:
             periodSeconds: 10
           volumeMounts:
             - name: data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
       volumes:
         - name: data
           persistentVolumeClaim:
