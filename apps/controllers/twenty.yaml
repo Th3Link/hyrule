@@ -186,7 +186,7 @@ spec:
               until nc -z twenty-redis 6379; do echo waiting for redis; sleep 2; done
       containers:
         - name: server
-          image: twentycrm/twenty:v1.23.9
+          image: twentycrm/twenty:v2.51.0
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -300,7 +300,7 @@ spec:
             - "until nc -z twenty-server 3000; do echo waiting for server; sleep 2; done"
       containers:
         - name: worker
-          image: twentycrm/twenty:v1.23.9
+          image: twentycrm/twenty:v2.51.0
           command: ["yarn", "worker:prod"]
           securityContext:
             allowPrivilegeEscalation: false
