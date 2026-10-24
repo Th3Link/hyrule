@@ -30,6 +30,11 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: longhorn-repo
-      version: v1.8.1
+      version: 1.9.2
   interval: 1m0s
   timeout: 15m
+  values:
+    defaultSettings:
+      # Upgrade volume engines automatically after a Longhorn upgrade
+      # (needed before the next minor upgrade)
+      concurrentAutomaticEngineUpgradePerNodeLimit: 1
