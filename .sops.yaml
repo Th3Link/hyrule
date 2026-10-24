@@ -8,3 +8,8 @@ creation_rules:
     encrypted_regex: ^(key|token|secret|secretboxEncryptionSecret|aescbcEncryptionSecret|bootstrapToken|id)$
     mac_only_encrypted: true
     age: age1g5a0avn7nn3p0zaae5pa2udcnhtxscqxt6p7h2mhvluxe4z7pv8q6gaka0
+  # Flux secrets (apps/, infrastructure/): encrypt data/stringData only,
+  # same as `sops --encrypt --age … --encrypted-regex '^(data|stringData)$'` in README.md
+  - path_regex: ^(apps|infrastructure)/.*\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1g5a0avn7nn3p0zaae5pa2udcnhtxscqxt6p7h2mhvluxe4z7pv8q6gaka0

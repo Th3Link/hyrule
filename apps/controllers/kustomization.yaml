@@ -4,6 +4,8 @@ resources:
 - nextcloud.yaml
 - nextcloud-secrets.yaml
 - nextcloud-backup.yaml
+- nextcloud-postgres.yaml
+- nextcloud-postgres-secrets.yaml
 - paperless.yaml
 - paperless-secrets.yaml
 - paperless-backup.yaml
