@@ -27,10 +27,15 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: 35.4.0
+      version: 42.1.3
       sourceRef:
         kind: HelmRepository
         name: traefik-repo
+  # Helm never updates CRDs on upgrade; let Flux do it with the chart
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   values:
     deployment:
       replicas: 2
@@ -65,25 +70,26 @@ spec:
     service:
       annotations:
         metallb.universe.tf/loadBalancerIPs: "192.168.178.210,fd00::210"
-      ipFamilyPolicy: RequireDualStack
-      ipFamilies:
-        - IPv4
-        - IPv6
+      spec:
+        ipFamilyPolicy: RequireDualStack
+        ipFamilies:
+          - IPv4
+          - IPv6
     ports:
       web:
-        redirections:
-          entryPoint:
-            to: websecure
-            scheme: https
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
       websecure:
-        tls:
-          enabled: true
-        store:
-          name: default
-        domains:
-          - main: "*.luehr.dev"
         port: 443
         targetPort: 443
+        http:
+          tls:
+            enabled: true
+            domains:
+              - main: "*.luehr.dev"
     ingressClass:  # @schema additionalProperties: false
       enabled: true
       isDefaultClass: true
@@ -91,11 +97,10 @@ spec:
     ingressRoute:
       dashboard:
         enabled: true
-    logs:
-      general:
-        level: INFO
-      access:
-        enabled: true
+    log:
+      level: INFO
+    accessLog:
+      enabled: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
