@@ -1,7 +1,7 @@
 ---
 # Nextcloud runs on SQLite (data/nextcloud.db), the MariaDB of the chart is
-# unused. This job copies the SQLite DB (VACUUM INTO = consistent snapshot while
-# Nextcloud runs) and the config dir (config.php holds instanceid, passwordsalt,
+# unused. This job copies the SQLite DB (SQLite online backup API = consistent
+# snapshot while Nextcloud runs) and the config dir (config.php holds instanceid, passwordsalt,
 # secret) into the db-dumps PVC, which Longhorn backs up to S3 (group "backup").
 # Restore: see docs/backup-restore.md
 apiVersion: v1
@@ -67,9 +67,11 @@ spec:
                   set -euo pipefail
                   ts=$(date +%Y%m%d-%H%M%S)
                   php -r '
-                    $db = new SQLite3("/nc/data/nextcloud.db", SQLITE3_OPEN_READONLY);
-                    $db->busyTimeout(60000);
-                    if (!$db->exec("VACUUM INTO \x27/tmp/nextcloud.db\x27")) { fwrite(STDERR, $db->lastErrorMsg()."\n"); exit(1); }
+                    $src = new SQLite3("/nc/data/nextcloud.db", SQLITE3_OPEN_READONLY);
+                    $src->busyTimeout(60000);
+                    $dst = new SQLite3("/tmp/nextcloud.db");
+                    if (!$src->backup($dst)) { fwrite(STDERR, $src->lastErrorMsg()."\n"); exit(1); }
+                    $dst->close();
                     $chk = new SQLite3("/tmp/nextcloud.db", SQLITE3_OPEN_READONLY);
                     $r = $chk->querySingle("PRAGMA integrity_check");
                     if ($r !== "ok") { fwrite(STDERR, "integrity_check: $r\n"); exit(1); }
