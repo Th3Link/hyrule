@@ -1,8 +1,8 @@
 ---
-# Nextcloud runs on SQLite (data/nextcloud.db), the MariaDB of the chart is
-# unused. This job copies the SQLite DB (SQLite online backup API = consistent
-# snapshot while Nextcloud runs) and the config dir (config.php holds instanceid, passwordsalt,
-# secret) into the db-dumps PVC, which Longhorn backs up to the NAS (group "backup").
+# Nextcloud runs on PostgreSQL (nextcloud-postgres.yaml). This job writes a
+# pg_dump (custom format) and a tar of the config dir (config.php holds
+# instanceid, passwordsalt, secret) into the db-dumps PVC, which Longhorn backs
+# up to the NAS (group "backup").
 # Restore: see docs/backup-restore.md
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -39,7 +39,7 @@ spec:
         spec:
           restartPolicy: OnFailure
           # The 600Gi volume is RWO: run next to Nextcloud and mount only the
-          # needed subPaths. No fsGroup: it would chown the whole volume.
+          # config subPath. No fsGroup: it would chown the whole volume.
           affinity:
             podAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -55,8 +55,40 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
+          initContainers:
+            - name: pg-dump
+              # same major version as the server (Renovate bumps both)
+              image: postgres:18
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: PGHOST
+                  value: nextcloud-postgres
+                - name: PGUSER
+                  value: nextcloud
+                - name: PGDATABASE
+                  value: nextcloud
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: nextcloud-postgres
+                      key: POSTGRES_PASSWORD
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  f=/dumps/nextcloud-pg-$(date +%Y%m%d-%H%M%S).dump
+                  pg_dump --format=custom --file="$f.tmp"
+                  pg_restore --list "$f.tmp" > /dev/null   # readable archive?
+                  mv "$f.tmp" "$f"
+              volumeMounts:
+                - name: dumps
+                  mountPath: /dumps
           containers:
-            - name: backup
+            - name: config
               image: docker.io/library/nextcloud:35.0.2-apache
               securityContext:
                 allowPrivilegeEscalation: false
@@ -67,43 +99,22 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  ts=$(date +%Y%m%d-%H%M%S)
-                  php -r '
-                    $src = new SQLite3("/nc/data/nextcloud.db", SQLITE3_OPEN_READONLY);
-                    $src->busyTimeout(60000);
-                    $dst = new SQLite3("/tmp/nextcloud.db");
-                    if (!$src->backup($dst)) { fwrite(STDERR, $src->lastErrorMsg()."\n"); exit(1); }
-                    $dst->close();
-                    $chk = new SQLite3("/tmp/nextcloud.db", SQLITE3_OPEN_READONLY);
-                    $r = $chk->querySingle("PRAGMA integrity_check");
-                    if ($r !== "ok") { fwrite(STDERR, "integrity_check: $r\n"); exit(1); }
-                  '
-                  gzip -c /tmp/nextcloud.db > /dumps/nextcloud-db-$ts.sqlite.gz.tmp
-                  mv /dumps/nextcloud-db-$ts.sqlite.gz.tmp /dumps/nextcloud-db-$ts.sqlite.gz
-                  tar -czf /dumps/nextcloud-config-$ts.tar.gz.tmp -C /nc config
-                  mv /dumps/nextcloud-config-$ts.tar.gz.tmp /dumps/nextcloud-config-$ts.tar.gz
+                  f=/dumps/nextcloud-config-$(date +%Y%m%d-%H%M%S).tar.gz
+                  tar -czf "$f.tmp" -C /nc config
+                  mv "$f.tmp" "$f"
                   find /dumps -name 'nextcloud-*' -mtime +14 -delete
                   ls -lh /dumps
               volumeMounts:
-                # The DB runs in WAL mode: SQLite needs to create nextcloud.db-shm
-                # next to it even for reading, so the data dir is mounted rw.
-                - name: nextcloud
-                  mountPath: /nc/data
-                  subPath: data
                 - name: nextcloud
                   mountPath: /nc/config
                   subPath: config
                   readOnly: true
-                - name: tmp
-                  mountPath: /tmp
                 - name: dumps
                   mountPath: /dumps
           volumes:
             - name: nextcloud
               persistentVolumeClaim:
                 claimName: nextcloud-nextcloud
-            - name: tmp
-              emptyDir: {}
             - name: dumps
               persistentVolumeClaim:
                 claimName: db-dumps

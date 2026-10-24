@@ -54,31 +54,19 @@ spec:
             protocol: https
         internalDatabase:
             enabled: false
+        # PostgreSQL 18, see nextcloud-postgres.yaml (migrated from SQLite)
         externalDatabase:
             enabled: true
-            type: mysql
-            host: nextcloud-mariadb
+            type: postgresql
+            host: nextcloud-postgres
             existingSecret:
                 enabled: true
-                secretName: nextcloud-db
+                secretName: nextcloud-postgres
                 usernameKey: username
-                passwordKey: mariadb-password
+                passwordKey: POSTGRES_PASSWORD
                 databaseKey: database
         mariadb:
-            enabled: true
-            image:
-                registry: docker.io
-                repository: bitnamilegacy/mariadb
-                tag: 12.0.2-debian-12-r0
-            auth:
-                database: nextcloud
-                username: nextcloud
-                existingSecret: nextcloud-db
-            primary:
-                persistence:
-                    enabled: true
-                    storageClass: longhorn
-                    size: 8Gi
+            enabled: false
         persistence:
             enabled: true
             storageClass: longhorn
