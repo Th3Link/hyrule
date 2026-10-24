@@ -1,0 +1,29 @@
+---
+# Longhorn backups go to the NAS (NFS export /backup on 192.168.178.239).
+# Volumes join the daily backup through the group label
+#   recurring-job-group.longhorn.io/backup: enabled
+# (on the PVC together with recurring-job.longhorn.io/source: enabled, or
+# directly on the Longhorn volume). See docs/backup-restore.md.
+apiVersion: longhorn.io/v1beta2
+kind: BackupTarget
+metadata:
+  name: default
+  namespace: longhorn
+spec:
+  backupTargetURL: nfs://192.168.178.239:/backup
+  credentialSecret: ""
+  pollInterval: 5m0s
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: daily-backup
+  namespace: longhorn
+spec:
+  task: backup
+  # Longhorn cron is UTC: 02:00 UTC = 03:00/04:00 Berlin, after the dump jobs (02:00)
+  cron: "0 2 * * *"
+  groups:
+    - backup
+  retain: 14
+  concurrency: 2
