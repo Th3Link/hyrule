@@ -1,0 +1,10 @@
+# sops rules. Existing Flux secrets are encrypted via CLI flags (see README.md);
+# this file only adds the rule for the Talos machine configs.
+creation_rules:
+  # Talos machine configs: encrypt only the secret fields, keep versions/IPs
+  # readable so Renovate can bump image tags. MAC over encrypted values only,
+  # so such plain-text edits keep the file decryptable.
+  - path_regex: ^talos/.*\.yaml$
+    encrypted_regex: ^(key|token|secret|secretboxEncryptionSecret|aescbcEncryptionSecret|bootstrapToken|id)$
+    mac_only_encrypted: true
+    age: age1g5a0avn7nn3p0zaae5pa2udcnhtxscqxt6p7h2mhvluxe4z7pv8q6gaka0

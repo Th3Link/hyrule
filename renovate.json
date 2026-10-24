@@ -1,0 +1,69 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "timezone": "Europe/Berlin",
+  "flux": {
+    "managerFilePatterns": ["/^(apps|infrastructure|clusters)/.+\\.ya?ml$/"]
+  },
+  "kubernetes": {
+    "managerFilePatterns": ["/^(apps|infrastructure|vms)/.+\\.ya?ml$/"]
+  },
+  "customManagers": [
+    {
+      "description": "Kubernetes component images in the Talos machine configs",
+      "customType": "regex",
+      "managerFilePatterns": ["/^talos/nodes/.+\\.yaml$/"],
+      "matchStrings": [
+        "image: (?<depName>registry\\.k8s\\.io/kube-(?:apiserver|controller-manager|scheduler|proxy)|ghcr\\.io/siderolabs/kubelet):(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Talos installer image (Image Factory schematic) in the Talos machine configs",
+      "customType": "regex",
+      "managerFilePatterns": ["/^talos/nodes/.+\\.yaml$/"],
+      "matchStrings": [
+        "image: factory\\.talos\\.dev/[a-z-]+-installer/[a-f0-9]{64}:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "siderolabs/talos",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "KubeVirt / CDI release manifests referenced by URL",
+      "customType": "regex",
+      "managerFilePatterns": ["/^infrastructure/controllers/kubevirt/kustomization\\.yaml$/"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>kubevirt/[^/]+)/releases/download/(?<currentValue>v\\d+\\.\\d+\\.\\d+)/"
+      ],
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Kubernetes: one PR per version, one minor at a time (talosctl upgrade-k8s cannot skip minors)",
+      "matchPackageNames": [
+        "registry.k8s.io/kube-apiserver",
+        "registry.k8s.io/kube-controller-manager",
+        "registry.k8s.io/kube-scheduler",
+        "registry.k8s.io/kube-proxy",
+        "ghcr.io/siderolabs/kubelet"
+      ],
+      "groupName": "kubernetes",
+      "separateMultipleMinor": true,
+      "prBodyNotes": ["Merging only updates the configs in git. Roll out with `talosctl -n 192.168.178.234 upgrade-k8s --to <version>` (see talos/README.md)."]
+    },
+    {
+      "description": "Talos OS: one minor at a time",
+      "matchPackageNames": ["siderolabs/talos"],
+      "groupName": "talos",
+      "separateMultipleMinor": true,
+      "prBodyNotes": ["Merging only updates the configs in git. Roll out node by node with `talosctl upgrade --image ...` (see talos/README.md)."]
+    },
+    {
+      "description": "KubeVirt and CDI together",
+      "matchPackageNames": ["kubevirt/kubevirt", "kubevirt/containerized-data-importer"],
+      "groupName": "kubevirt"
+    }
+  ]
+}
