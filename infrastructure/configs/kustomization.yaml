@@ -5,3 +5,4 @@ resources:
 - cert-manager-issuer.yaml
 - traefik.yaml
 - kubevirt.yaml
+- longhorn-backup.yaml

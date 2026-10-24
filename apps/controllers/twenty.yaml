@@ -42,13 +42,13 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:16
+          image: postgres:18
           # No dropped capabilities here: the official postgres image starts as
           # root and chowns/chmods the data dir itself before switching to the
           # postgres user - dropping ALL breaks that startup step.
+          # Postgres 18+ keeps its data in /var/lib/postgresql/<major>/docker
+          # (default PGDATA), so the volume is mounted one level up.
           env:
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_DB
               value: default
             - name: POSTGRES_USER
@@ -72,7 +72,7 @@ spec:
             periodSeconds: 10
           volumeMounts:
             - name: data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -110,7 +110,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis:7-alpine
+          image: redis:8-alpine
           command: ["redis-server", "--maxmemory-policy", "noeviction", "--save", ""]
           securityContext:
             allowPrivilegeEscalation: false
@@ -177,7 +177,7 @@ spec:
     spec:
       initContainers:
         - name: wait-for-db-redis
-          image: busybox:1.36
+          image: busybox:1.38
           command:
             - sh
             - -c
@@ -186,7 +186,7 @@ spec:
               until nc -z twenty-redis 6379; do echo waiting for redis; sleep 2; done
       containers:
         - name: server
-          image: twentycrm/twenty:v1.19.1
+          image: twentycrm/twenty:v2.51.0
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -293,14 +293,14 @@ spec:
     spec:
       initContainers:
         - name: wait-for-server
-          image: busybox:1.36
+          image: busybox:1.38
           command:
             - sh
             - -c
             - "until nc -z twenty-server 3000; do echo waiting for server; sleep 2; done"
       containers:
         - name: worker
-          image: twentycrm/twenty:v1.19.1
+          image: twentycrm/twenty:v2.51.0
           command: ["yarn", "worker:prod"]
           securityContext:
             allowPrivilegeEscalation: false
