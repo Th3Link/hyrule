@@ -3,3 +3,21 @@ kind: Kustomization
 resources:
 - gotk-components.yaml
 - gotk-sync.yaml
+# The cluster DNS domain is hyrule.luehr.dev, not cluster.local. gotk-components
+# is generated with the default domain (also by Renovate), so append the right
+# flags here; for repeated flags the last one wins.
+patches:
+- target:
+    kind: Deployment
+    name: (kustomize-controller|helm-controller|source-controller)
+  patch: |
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --events-addr=http://notification-controller.flux-system.svc.hyrule.luehr.dev./
+- target:
+    kind: Deployment
+    name: source-controller
+  patch: |
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --storage-adv-addr=source-controller.flux-system.svc.hyrule.luehr.dev.
