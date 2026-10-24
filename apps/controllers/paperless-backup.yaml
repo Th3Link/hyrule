@@ -1,6 +1,6 @@
 ---
 # Daily logical dump of the paperless database into the db-dumps PVC.
-# The PVC is backed up to S3 by the Longhorn recurring job (group "backup").
+# The PVC is backed up to the NAS by the Longhorn recurring job (group "backup").
 # Restore: see docs/backup-restore.md
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -8,6 +8,8 @@ metadata:
   name: db-dumps
   namespace: paperless
   labels:
+    # Longhorn copies the recurring-job labels of the PVC to the volume
+    recurring-job.longhorn.io/source: enabled
     recurring-job-group.longhorn.io/backup: enabled
 spec:
   accessModes:

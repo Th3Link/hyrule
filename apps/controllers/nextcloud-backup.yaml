@@ -2,7 +2,7 @@
 # Nextcloud runs on SQLite (data/nextcloud.db), the MariaDB of the chart is
 # unused. This job copies the SQLite DB (SQLite online backup API = consistent
 # snapshot while Nextcloud runs) and the config dir (config.php holds instanceid, passwordsalt,
-# secret) into the db-dumps PVC, which Longhorn backs up to S3 (group "backup").
+# secret) into the db-dumps PVC, which Longhorn backs up to the NAS (group "backup").
 # Restore: see docs/backup-restore.md
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -10,6 +10,8 @@ metadata:
   name: db-dumps
   namespace: nextcloud
   labels:
+    # Longhorn copies the recurring-job labels of the PVC to the volume
+    recurring-job.longhorn.io/source: enabled
     recurring-job-group.longhorn.io/backup: enabled
 spec:
   accessModes:
