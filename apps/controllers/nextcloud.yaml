@@ -36,6 +36,10 @@ spec:
             security:
                 allowInsecureImages: true
         replicaCount: 1
+        # Background jobs: crond sidecar runs cron.php every 5 minutes
+        # (Nextcloud background mode set to "cron" with occ background:cron)
+        cronjob:
+            enabled: true
         nextcloud:
             host: nextcloud.luehr.dev
             existingSecret:
