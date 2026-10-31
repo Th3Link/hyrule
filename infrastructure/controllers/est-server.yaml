@@ -37,7 +37,6 @@ spec:
   chart:
     spec:
       chart: ./deploy/helm/est-server
-      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: est-server
