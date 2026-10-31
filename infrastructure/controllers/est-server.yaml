@@ -1,0 +1,86 @@
+---
+# EST (RFC 7030) server, https://github.com/Th3Link/est-server
+# Clients enroll at https://est.luehr.dev/.well-known/est; certificates come
+# from Let's Encrypt (ClusterIssuer letsencrypt-dns) through cert-manager.
+# Only clients registered as EstClient (infrastructure/configs/est-clients.yaml)
+# get certificates.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: est
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: est-server
+  namespace: est
+spec:
+  interval: 1h
+  url: https://github.com/Th3Link/est-server
+  ref:
+    tag: v0.2.0
+  ignore: |
+    /*
+    !/deploy/helm/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: est-server
+  namespace: est
+spec:
+  interval: 1h
+  install:
+    crds: Create
+  upgrade:
+    crds: CreateReplace
+  chart:
+    spec:
+      chart: ./deploy/helm/est-server
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: est-server
+  values:
+    image:
+      repository: ghcr.io/th3link/est-server
+      tag: "0.2.0"
+    service:
+      type: LoadBalancer
+      ipFamilyPolicy: RequireDualStack
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: "192.168.178.225,fd00::225"
+    serverCertificate:
+      dnsNames:
+        - est.luehr.dev
+      issuerRef:
+        name: letsencrypt-dns
+        kind: ClusterIssuer
+    # Client certificates come from Let's Encrypt, no own CA needed; the
+    # server learns the CA chain from the certificates cert-manager returns
+    bootstrapCA:
+      enabled: false
+    # keeps the learned CA chain across restarts
+    persistence:
+      enabled: true
+      size: 100Mi
+    config: |
+      [server]
+      listen = ["[::]:8443"]
+      health_listen = ["[::]:8080"]
+      state_dir = "/var/lib/est-server"
+
+      [server.tls]
+      cert = "/etc/est-server/tls/tls.crt"
+      key = "/etc/est-server/tls/tls.key"
+
+      # EstClient objects in this namespace
+      [clients]
+      kubernetes = {}
+
+      # /.well-known/est: registered clients get a Let's Encrypt certificate
+      # for their names (DNS-01 takes longer than wait, clients get 202 first)
+      [[label]]
+      signer = { type = "cert-manager", issuer = { name = "letsencrypt-dns", kind = "ClusterIssuer" }, duration = "2160h", wait = "20s" }
+      registered = "required"
+      retry_after = "2m"

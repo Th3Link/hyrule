@@ -6,3 +6,4 @@ resources:
 - pihole.yaml
 - pihole-secrets.yaml
 - kubevirt
+- est-server.yaml

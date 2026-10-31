@@ -6,3 +6,4 @@ resources:
 - traefik.yaml
 - kubevirt.yaml
 - longhorn-backup.yaml
+- est-clients.yaml
