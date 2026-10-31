@@ -71,6 +71,8 @@ spec:
       customDnsEntries:
         - address=/mosquitto.luehr.dev/192.168.178.213
         - address=/mosquitto.luehr.dev/fd00::213
+        - address=/est.luehr.dev/192.168.178.225
+        - address=/est.luehr.dev/fd00::225
         - address=/pihole.luehr.dev/192.168.178.210
         - address=/pihole.luehr.dev/fd00::210
         - address=/navidrome.luehr.dev/192.168.178.210
