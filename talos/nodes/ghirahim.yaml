@@ -16,7 +16,7 @@ machine:
     #   - 172.16.0.10
     #   - 192.168.0.10
     kubelet:
-        image: ghcr.io/siderolabs/kubelet:v1.37.1
+        image: ghcr.io/siderolabs/kubelet:v1.37.2
         defaultRuntimeSeccompProfileEnabled: true
         disableManifestsDirectory: true
     network:
