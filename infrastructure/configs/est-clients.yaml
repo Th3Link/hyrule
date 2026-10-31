@@ -1,0 +1,16 @@
+---
+# Clients of the EST server (infrastructure/controllers/est-server.yaml).
+# Only these keys get certificates, and only for their names.
+# Pin of a client key: `est-server pin <csr|cert|key>` or
+#   openssl req -in x.csr -pubkey -noout | openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | base64
+# Status: kubectl -n est get estclients
+apiVersion: est.luehr.dev/v1alpha1
+kind: EstClient
+metadata:
+  name: gateway
+  namespace: est
+spec:
+  dnsNames:
+    - gateway.luehr.dev
+  publicKeys:
+    - pinSha256: jLw0xhIGsKz58yhJV5TywWpeHReRZ+GVjHj/r66RZhM=
