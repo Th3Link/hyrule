@@ -35,8 +35,8 @@ spec:
             - -c
             - |
               mkdir -p /mosquitto/certs /mosquitto/config
-              cp --no-preserve=ownership -a -L /certs/*.key /mosquitto/certs/
-              cp --no-preserve=ownership -a -L /certs/*.crt /mosquitto/certs/
+              cp --no-preserve=ownership -L /certs/tls.crt /certs/tls.key /mosquitto/certs/
+              chmod 0600 /mosquitto/certs/tls.key
               cp /mosquitto.conf /mosquitto/config
               cp /passwd /mosquitto/config
               cp /acl /mosquitto/config
@@ -91,7 +91,8 @@ spec:
             secretName: mosquitto-password
         - name: certs
           secret:
-            secretName: mosquitto-certificates
+            # Let's Encrypt certificate from cert-manager (see Certificate below)
+            secretName: mosquitto-tls
         - name: mosquitto
           emptyDir: {}
 ---
@@ -109,9 +110,10 @@ data:
     listener 8883
     protocol mqtt
     
-    cafile /mosquitto/certs/luehr.dev.crt
-    certfile /mosquitto/certs/mqtt.crt
-    keyfile /mosquitto/certs/mqtt.key
+    # Let's Encrypt certificate (cert-manager); tls.crt contains the full chain.
+    # No cafile: clients are not asked for certificates.
+    certfile /mosquitto/certs/tls.crt
+    keyfile /mosquitto/certs/tls.key
     require_certificate false
 ---
 apiVersion: v1
@@ -134,3 +136,85 @@ spec:
   ipFamilies:
     - IPv4
     - IPv6
+---
+# Publicly trusted certificate for MQTT over TLS (DNS-01 via Cloudflare)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mosquitto-tls
+  namespace: homeassistant
+spec:
+  secretName: mosquitto-tls
+  renewBefore: 720h
+  dnsNames:
+    - mosquitto.luehr.dev
+    - mqtt.luehr.dev
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+---
+# Mosquitto reads the certificate only at start (the init container copies it).
+# Restart it weekly so a renewed certificate (renewed 30 days before expiry)
+# is picked up well in time.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mosquitto-restart
+  namespace: homeassistant
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mosquitto-restart
+  namespace: homeassistant
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["mosquitto"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mosquitto-restart
+  namespace: homeassistant
+subjects:
+  - kind: ServiceAccount
+    name: mosquitto-restart
+    namespace: homeassistant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mosquitto-restart
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mosquitto-restart
+  namespace: homeassistant
+spec:
+  schedule: "30 4 * * 1"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: mosquitto-restart
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: kubectl
+              image: registry.k8s.io/kubectl:v1.37.1
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              args: ["-n", "homeassistant", "rollout", "restart", "deployment/mosquitto"]
