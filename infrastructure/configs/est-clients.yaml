@@ -13,4 +13,4 @@ spec:
   dnsNames:
     - gateway.luehr.dev
   publicKeys:
-    - pinSha256: jLw0xhIGsKz58yhJV5TywWpeHReRZ+GVjHj/r66RZhM=
+    - pinSha256: 76aGZM9SbKehLVq0gyVlynKzttddFcytM/JAT1KqmuM=
