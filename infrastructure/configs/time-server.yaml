@@ -1,0 +1,226 @@
+---
+# NTP + NTS time server at time.luehr.dev (192.168.178.226 / fd00::226).
+# chrony syncs from NTS servers (PTB, Netnod, Cloudflare) and serves NTP on
+# UDP 123 and NTS-KE on TCP 4460 with a Let's Encrypt certificate.
+# It does not set the node clock (-x); Talos keeps its own time sync.
+# Client: `server time.luehr.dev iburst nts` (chrony), or plain NTP.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: time
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: time-tls
+  namespace: time
+spec:
+  secretName: time-tls
+  dnsNames:
+    - time.luehr.dev
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chrony
+  namespace: time
+data:
+  chrony.conf: |
+    server ptbtime1.ptb.de iburst nts
+    server ptbtime2.ptb.de iburst nts
+    server ptbtime3.ptb.de iburst nts
+    server nts.netnod.se iburst nts
+    server time.cloudflare.com iburst nts
+    minsources 2
+    driftfile /var/lib/chrony/chrony.drift
+    ntsdumpdir /var/lib/chrony
+    makestep 1 3
+    ntsserverkey /etc/chrony/tls/tls.key
+    ntsservercert /etc/chrony/tls/tls.crt
+    # LAN only (LoadBalancer IP); clients arrive SNATed from node IPs
+    allow all
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chrony
+  namespace: time
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chrony
+  template:
+    metadata:
+      labels:
+        app: chrony
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: chrony
+          image: dockurr/chrony:4.9
+          # chronyd must start as root and drops to user chrony itself,
+          # keeping only NET_BIND_SERVICE. The key is copied so that only
+          # group chrony can read it.
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              install -d -o chrony -g chrony -m 0750 /run/chrony /var/lib/chrony
+              install -o root -g chrony -m 0440 /tls/tls.key /etc/chrony/tls/tls.key
+              install -o root -g chrony -m 0444 /tls/tls.crt /etc/chrony/tls/tls.crt
+              exec chronyd -d -x -u chrony -f /etc/chrony/chrony.conf
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["NET_BIND_SERVICE", "SETUID", "SETGID", "CHOWN", "FOWNER", "DAC_OVERRIDE"]
+          ports:
+            - name: ntp
+              containerPort: 123
+              protocol: UDP
+            - name: nts-ke
+              containerPort: 4460
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["chronyc", "-n", "waitsync", "1", "0.1"]
+            periodSeconds: 30
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: nts-ke
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/chrony/chrony.conf
+              subPath: chrony.conf
+            - name: tls-src
+              mountPath: /tls
+              readOnly: true
+            - name: tls
+              mountPath: /etc/chrony/tls
+            - name: run
+              mountPath: /run/chrony
+            - name: state
+              mountPath: /var/lib/chrony
+      volumes:
+        - name: config
+          configMap:
+            name: chrony
+        - name: tls-src
+          secret:
+            secretName: time-tls
+        - name: tls
+          emptyDir:
+            medium: Memory
+        - name: run
+          emptyDir:
+            medium: Memory
+        - name: state
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrony
+  namespace: time
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.178.226,fd00::226"
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: RequireDualStack
+  ipFamilies: [IPv4, IPv6]
+  selector:
+    app: chrony
+  ports:
+    - name: ntp
+      port: 123
+      targetPort: ntp
+      protocol: UDP
+    - name: nts-ke
+      port: 4460
+      targetPort: nts-ke
+      protocol: TCP
+---
+# chrony reads the certificate only at start: restart weekly so a renewed
+# Let's Encrypt certificate (renewed 30 days before expiry) is picked up.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chrony-restart
+  namespace: time
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chrony-restart
+  namespace: time
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["chrony"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chrony-restart
+  namespace: time
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: chrony-restart
+subjects:
+  - kind: ServiceAccount
+    name: chrony-restart
+    namespace: time
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: chrony-restart
+  namespace: time
+spec:
+  schedule: "45 4 * * 1"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: chrony-restart
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: kubectl
+              image: registry.k8s.io/kubectl:v1.37.1
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              args: ["-n", "time", "rollout", "restart", "deployment/chrony"]

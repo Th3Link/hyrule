@@ -7,3 +7,4 @@ resources:
 - kubevirt.yaml
 - longhorn-backup.yaml
 - est-clients.yaml
+- time-server.yaml

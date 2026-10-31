@@ -73,6 +73,8 @@ spec:
         - address=/mosquitto.luehr.dev/fd00::213
         - address=/est.luehr.dev/192.168.178.225
         - address=/est.luehr.dev/fd00::225
+        - address=/time.luehr.dev/192.168.178.226
+        - address=/time.luehr.dev/fd00::226
         - address=/pihole.luehr.dev/192.168.178.210
         - address=/pihole.luehr.dev/fd00::210
         - address=/navidrome.luehr.dev/192.168.178.210
