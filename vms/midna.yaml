@@ -36,7 +36,7 @@ spec:
         cpu:
           cores: 6
         memory:
-          guest: 20Gi
+          guest: 24Gi
         devices:
           disks:
             - name: root
