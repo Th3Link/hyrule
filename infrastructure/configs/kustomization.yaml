@@ -8,3 +8,4 @@ resources:
 - longhorn-backup.yaml
 - est-clients.yaml
 - time-server.yaml
+- hyrule-privat-secrets.yaml

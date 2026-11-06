@@ -1,0 +1,37 @@
+---
+# Private apps from Th3Link/hyrule-privat. The deploy key secret comes from
+# infrastructure/configs/hyrule-privat-secrets.yaml.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: hyrule-privat
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  secretRef:
+    name: hyrule-privat
+  url: ssh://git@github.com/Th3Link/hyrule-privat
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-privat
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infra-configs
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: hyrule-privat
+  path: ./apps
+  prune: true
+  wait: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

@@ -32,6 +32,12 @@ spec:
         name: pihole-repo
       version: 2.38.0
   interval: 1m0s
+  # DNS entries for the apps in Th3Link/hyrule-privat (dnsmasq.additionalHostsEntries)
+  valuesFrom:
+    - kind: ConfigMap
+      name: pihole-dns-privat
+      valuesKey: values.yaml
+      optional: true
   values:
     DNS1:
       192.168.178.1
