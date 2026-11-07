@@ -1,0 +1,134 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yuvomi
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+---
+# SQLite database (SQLCipher), generated secrets and the app's own backups
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yuvomi-data
+  namespace: yuvomi
+  labels:
+    # Longhorn copies the recurring-job labels of the PVC to the volume
+    recurring-job.longhorn.io/source: enabled
+    recurring-job-group.longhorn.io/backup: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yuvomi
+  namespace: yuvomi
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: yuvomi
+  template:
+    metadata:
+      labels:
+        app: yuvomi
+    spec:
+      containers:
+        - name: yuvomi
+          image: ghcr.io/ulsklyc/yuvomi:2.86.0
+          # Starts as root: the entrypoint chowns /data and then drops to
+          # the node user (UID 1000).
+          env:
+            - name: TZ
+              value: Europe/Berlin
+            - name: NODE_ENV
+              value: production
+            - name: DB_PATH
+              value: /data/yuvomi.db
+            - name: BACKUP_DIR
+              value: /data/backups
+            - name: BASE_URL
+              value: https://yuvomi.luehr.dev
+            # Behind traefik with TLS
+            - name: SESSION_SECURE
+              value: "true"
+            - name: TRUST_PROXY
+              value: "1"
+            # Kept in git (sops) as well: without DB_ENCRYPTION_KEY the
+            # database cannot be decrypted, also not from a backup.
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: yuvomi-secrets
+                  key: SESSION_SECRET
+            - name: DB_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yuvomi-secrets
+                  key: DB_ENCRYPTION_KEY
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: yuvomi-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yuvomi
+  namespace: yuvomi
+spec:
+  selector:
+    app: yuvomi
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yuvomi
+  namespace: yuvomi
+spec:
+  rules:
+    - host: yuvomi.luehr.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yuvomi
+                port:
+                  number: 3000
