@@ -19,3 +19,5 @@ resources:
 - twenty-secrets.yaml
 - siyuan.yaml
 - siyuan-secrets.yaml
+- yuvomi.yaml
+- yuvomi-secrets.yaml
