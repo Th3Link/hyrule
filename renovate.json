@@ -94,6 +94,21 @@
         "fluxcd/flux2"
       ],
       "separateMultipleMinor": true
+    },
+    {
+      "description": "Postgres major upgrades need a dump/restore or pg_upgrade",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "postgres"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "prBodyNotes": [
+        "\u26a0\ufe0f Postgres major upgrade: the data directory is not compatible. Dump and restore (or pg_upgrade) before merging."
+      ]
     }
   ]
 }
