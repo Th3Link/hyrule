@@ -39,6 +39,9 @@ spec:
       valuesKey: values.yaml
       optional: true
   values:
+    image:
+      # renovate: image=pihole/pihole
+      tag: "2026.07.2"
     DNS1:
       192.168.178.1
     persistentVolumeClaim:
