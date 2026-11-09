@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - name: siyuan
-          image: b3log/siyuan:latest
+          image: b3log/siyuan:v3.8.9
           # No dropped capabilities: the entrypoint script chowns the
           # workspace dir to PUID:PGID on first start, similar to postgres.
           args: ["serve", "--workspace=/siyuan/workspace/"]

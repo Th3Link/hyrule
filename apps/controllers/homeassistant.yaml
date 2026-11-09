@@ -28,6 +28,9 @@ spec:
         name: homeassistant
         namespace: homeassistant
   values:
+    image:
+      # renovate: image=ghcr.io/home-assistant/home-assistant
+      tag: "2026.11.0"
     env:
       - name: TZ
         value: Europe/Berlin
@@ -41,6 +44,8 @@ spec:
     configuration:
       enabled: true
       forceInit: true
+      initContainer:
+        image: mikefarah/yq:4.54.1
       trusted_proxies:
         - 10.0.0.0/8
     persistence:
@@ -51,6 +56,9 @@ spec:
     addons:
       codeserver:
         enabled: true
+        image:
+          # renovate: image=ghcr.io/coder/code-server
+          tag: "4.141.0"
         ingress:
           enabled: true
           hosts:

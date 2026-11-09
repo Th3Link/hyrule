@@ -34,6 +34,7 @@ spec:
   values:
     replicaCount: 1
     image:
+      repository: ghcr.io/paperless-ngx/paperless-ngx
       tag: 2.18.4
     ingress:
       main:

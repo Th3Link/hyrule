@@ -19,7 +19,7 @@ spec:
         fsGroup: 1883
       initContainers:
         - name: copy-mosquitto
-          image: ubuntu
+          image: ubuntu:26.04
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -61,7 +61,7 @@ spec:
               mountPath: /mosquitto
       containers:
         - name: mosquitto
-          image: eclipse-mosquitto
+          image: eclipse-mosquitto:2.1.2-alpine
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

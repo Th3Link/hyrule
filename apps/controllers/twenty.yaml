@@ -42,7 +42,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:18
+          image: postgres:18.6
           # No dropped capabilities here: the official postgres image starts as
           # root and chowns/chmods the data dir itself before switching to the
           # postgres user - dropping ALL breaks that startup step.
@@ -110,7 +110,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis:8-alpine
+          image: redis:8.10.3-alpine
           command: ["redis-server", "--maxmemory-policy", "noeviction", "--save", ""]
           securityContext:
             allowPrivilegeEscalation: false
