@@ -58,7 +58,7 @@ spec:
         enabled: true
         image:
           # renovate: image=ghcr.io/coder/code-server
-          tag: "4.141.0"
+          tag: "4.145.2"
         ingress:
           enabled: true
           hosts:
