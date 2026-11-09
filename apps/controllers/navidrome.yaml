@@ -67,7 +67,7 @@ spec:
         fsGroup: 1000 
       containers:
         - name: navidrome
-          image: deluan/navidrome:latest
+          image: deluan/navidrome:0.64.2
           securityContext:
             allowPrivilegeEscalation: false
             seccompProfile:

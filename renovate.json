@@ -94,6 +94,16 @@
         "fluxcd/flux2"
       ],
       "separateMultipleMinor": true
+    },
+    {
+      "description": "servercontainers/samba tags like a3.24.4-s4.23.8-r0 (Alpine version, then Samba version)",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/servercontainers/samba"
+      ],
+      "versioning": "regex:^a(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-s4\\.(?<build>\\d+)\\.(?<revision>\\d+)-r\\d+$"
     }
   ]
 }
