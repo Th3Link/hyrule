@@ -8,6 +8,10 @@ spec:
   dataVolumeTemplates:
     - metadata:
         name: impa-root
+        labels:
+          # daily snapshot-cleanup + filesystem-trim (infrastructure/configs/longhorn-backup.yaml)
+          recurring-job.longhorn.io/source: enabled
+          recurring-job-group.longhorn.io/vm: enabled
       spec:
         storage:
           storageClassName: longhorn-vm
