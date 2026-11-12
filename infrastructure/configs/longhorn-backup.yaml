@@ -27,3 +27,36 @@ spec:
     - backup
   retain: 14
   concurrency: 2
+---
+# VM root disks (vms/): give space freed in the guest back to Longhorn.
+# Volumes join with the label recurring-job-group.longhorn.io/vm=enabled.
+# 1. snapshot-cleanup removes system snapshots (e.g. from replica rebuilds).
+#    The one under volume-head is only marked removed ...
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: vm-snapshot-cleanup
+  namespace: longhorn
+spec:
+  task: snapshot-cleanup
+  cron: "0 1 * * *"
+  groups:
+    - vm
+  retain: 0
+  concurrency: 1
+---
+# 2. ... and filesystem-trim frees its data too, because the VM volumes have
+#    unmapMarkSnapChainRemoved=enabled. Needs discard inside the guest (btrfs
+#    discard=async) and discard='unmap' on the KubeVirt disk.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: vm-filesystem-trim
+  namespace: longhorn
+spec:
+  task: filesystem-trim
+  cron: "30 1 * * *"
+  groups:
+    - vm
+  retain: 0
+  concurrency: 1
