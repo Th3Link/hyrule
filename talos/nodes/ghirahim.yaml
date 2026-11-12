@@ -40,7 +40,7 @@ machine:
     install:
         diskSelector:
             model: NGFF 256GB SSD
-        image: factory.talos.dev/metal-installer/98c912e25a452279d00bd5f060b0b3f6677ee1546f391928bab5ed1e5bd90bd7:v1.14.5
+        image: factory.talos.dev/metal-installer/98c912e25a452279d00bd5f060b0b3f6677ee1546f391928bab5ed1e5bd90bd7:v1.14.6
         wipe: true
     time:
         disabled: false
