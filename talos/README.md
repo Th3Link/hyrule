@@ -41,9 +41,16 @@ Merging a Renovate PR only changes the files here. Roll out by hand:
 
 - **Kubernetes** (`kubernetes` group, one minor at a time):
   `talosctl -n 192.168.178.234 upgrade-k8s --to <version>`
-- **Talos** (`talos` group), one node at a time, worker first, wait until the
-  node is Ready and etcd is healthy before the next one:
-  `talosctl -n <ip> upgrade --image factory.talos.dev/metal-installer/98c912e25a452279d00bd5f060b0b3f6677ee1546f391928bab5ed1e5bd90bd7:<version> --wait`
+- **Talos** (`talos` group), one node at a time, worker first:
+  `talos/upgrade-node.sh <node>`
 
-Each VM in `vms/` has its disk only on its own node, so it is down while that
-node reboots and comes back afterwards.
+  The script takes the installer image from `nodes/<node>.yaml` and:
+  1. refuses to start while a Longhorn volume is degraded,
+  2. stops the VMs on the node (their disk has a single replica there, which
+     makes Longhorn block the drain),
+  3. sets the Longhorn `node-drain-policy` to `allow-if-replica-is-stopped`,
+  4. runs `talosctl upgrade` (drain, install, reboot, uncordon),
+  5. restores the policy, uncordons and starts the VMs again (also on failure),
+  6. waits until every volume has rebuilt.
+
+  Start the next node only after it has finished.
