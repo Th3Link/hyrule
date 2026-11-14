@@ -89,7 +89,7 @@ spec:
                   mountPath: /dumps
           containers:
             - name: config
-              image: docker.io/library/nextcloud:35.0.2-apache
+              image: docker.io/library/nextcloud:35.0.3-apache
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
