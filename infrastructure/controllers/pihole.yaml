@@ -30,7 +30,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: pihole-repo
-      version: 2.38.0
+      version: 2.39.0
   interval: 1m0s
   # DNS entries for the apps in Th3Link/hyrule-privat (dnsmasq.additionalHostsEntries)
   valuesFrom:
