@@ -37,7 +37,7 @@ spec:
                 allowInsecureImages: true
         image:
             # renovate: image=docker.io/library/nextcloud
-            tag: "35.0.2-apache"
+            tag: "35.0.3-apache"
         replicaCount: 1
         # Background jobs: crond sidecar runs cron.php every 5 minutes
         # (Nextcloud background mode set to "cron" with occ background:cron)
